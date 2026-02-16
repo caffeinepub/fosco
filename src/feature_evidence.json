@@ -1,0 +1,206 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-implement-a-required-sign-in-flow-using-internet-identity-followed-by-a-required-profile-step-that-collects-and-stores-the-user-s-phone-number-as-plain-text-before-allowing-access-to-calling-screen-casting-features",
+      "featureTitle": "Implement a required sign-in flow using Internet Identity, followed by a required profile step that collects and stores the user’s phone number (as plain text) before allowing access to calling/screen-casting features.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/features/auth/LoginButton.tsx",
+        "frontend/src/features/profile/PhoneNumberSetupCard.tsx",
+        "frontend/src/features/profile/ProfileDialog.tsx",
+        "frontend/src/hooks/useAvailability.ts",
+        "frontend/src/hooks/useCallerProfile.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-webrtc-1-1-video-audio-calling-in-the-frontend-using-the-user-s-webcam-and-microphone-including-permission-prompts-and-local-preview-and-connect-peers-using-canister-mediated-signaling-offer-answer-ice-exchange",
+      "featureTitle": "Implement WebRTC 1:1 video/audio calling in the frontend using the user’s webcam and microphone, including permission prompts and local preview, and connect peers using canister-mediated signaling (offer/answer/ICE exchange).",
+      "files": [
+        "frontend/src/features/call/CallSurface.tsx",
+        "frontend/src/features/call/useWebRTCCall.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-outgoing-call-ux-a-phone-number-input-field-to-initiate-a-call-to-another-signed-in-user-and-an-in-call-control-set-at-minimum-end-call-optionally-mute-mic-disable-camera",
+      "featureTitle": "Add outgoing call UX: a phone-number input field to initiate a call to another signed-in user, and an in-call control set (at minimum: end call; optionally: mute mic / disable camera).",
+      "files": [
+        "frontend/src/features/call/InCallControls.tsx",
+        "frontend/src/features/call/OutgoingCallPanel.tsx",
+        "frontend/src/features/call/useCalleeLookup.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-incoming-call-ux-inside-the-facetime-window-show-an-incoming-call-state-with-answer-decline-controls-and-only-establish-the-webrtc-connection-when-the-user-answers",
+      "featureTitle": "Add incoming call UX inside the facetime window: show an “Incoming call” state with Answer/Decline controls, and only establish the WebRTC connection when the user answers.",
+      "files": [
+        "frontend/src/features/call/CallSurface.tsx",
+        "frontend/src/features/call/IncomingCallPrompt.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-the-main-viewing-layout-a-large-movie-screen-cast-area-and-a-small-facetime-window-anchored-to-the-bottom-left-as-an-overlay-the-facetime-window-must-be-the-smallest-window-on-screen-during-normal-viewing",
+      "featureTitle": "Implement the main viewing layout: a large “movie/screen-cast” area and a small facetime window anchored to the bottom-left as an overlay; the facetime window must be the smallest window on screen during normal viewing.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/features/layout/FacetimeOverlay.tsx",
+        "frontend/src/features/layout/FoscoLayout.tsx",
+        "frontend/src/features/layout/MovieWindow.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-screen-casting-screen-share-capability-allow-a-user-in-a-call-to-share-their-screen-and-render-the-shared-stream-in-the-large-movie-window-for-both-users-allow-stopping-screen-share-to-return-to-the-default-state",
+      "featureTitle": "Add screen-casting (screen share) capability: allow a user in a call to share their screen and render the shared stream in the large movie window for both users; allow stopping screen share to return to the default state.",
+      "files": [
+        "frontend/src/features/call/useWebRTCCall.ts",
+        "frontend/src/features/layout/MovieWindow.tsx",
+        "frontend/src/features/screenShare/ScreenShareControls.tsx",
+        "frontend/src/features/screenShare/useScreenShare.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-enforce-only-one-active-screen-cast-at-a-time-per-call-session-via-backend-session-state-when-one-participant-is-currently-sharing-attempts-by-the-other-participant-to-start-screen-share-are-rejected-with-an-english-reminder-message",
+      "featureTitle": "Enforce “only one active screen cast at a time” per call session via backend session state: when one participant is currently sharing, attempts by the other participant to start screen share are rejected with an English reminder message.",
+      "files": [
+        "frontend/src/features/screenShare/ScreenShareControls.tsx",
+        "frontend/src/features/screenShare/useScreenShare.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-8"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-fullscreen-mode-for-the-movie-screen-cast-window-when-fullscreen-is-enabled-keep-the-facetime-window-visible-at-bottom-left-and-reduce-its-size-compared-to-non-fullscreen-mode",
+      "featureTitle": "Add fullscreen mode for the movie/screen-cast window; when fullscreen is enabled, keep the facetime window visible at bottom-left and reduce its size compared to non-fullscreen mode.",
+      "files": [
+        "frontend/src/features/layout/FoscoLayout.tsx",
+        "frontend/src/features/layout/MovieWindow.tsx",
+        "frontend/src/features/layout/useFullscreen.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-9"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-create-a-coherent-visual-theme-for-fosco-and-apply-it-consistently-across-the-app-colors-typography-spacing-and-component-styling-suitable-for-a-co-watching-calling-product-avoid-default-looking-styling",
+      "featureTitle": "Create a coherent visual theme for FOSCO and apply it consistently across the app (colors, typography, spacing, and component styling) suitable for a “co-watching + calling” product; avoid default-looking styling.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/features/branding/FoscoBranding.tsx",
+        "frontend/src/index.css",
+        "frontend/tailwind.config.js"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-10"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

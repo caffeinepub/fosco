@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Build FOSCO: a web app for real-time video calling (via webcam/mic) while co-watching by screen casting, with phone-number-based sign-in and a UI that keeps a small video-call window in the bottom-left over a larger movie/screen-cast window.",
+  "architectural_notes": [
+    "Use real-time browser media (webcam/mic) for video calls (e.g., WebRTC).",
+    "Use browser screen-capture for screen casting (e.g., getDisplayMedia) with single-caster enforcement."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "imageRequirements": "## Required Images\n- FOSCO logo mark (fosco-logo.dim_512x512.png)\n- FOSCO wordmark lockup (fosco-wordmark.dim_1200x300.png)",
+  "existing_features": [
+    {
+      "id": "feature-implement-a-required-sign-in-flow-using-internet-identity-followed-by-a-required-profile-step-that-collects-and-stores-the-user-s-phone-number-as-plain-text-before-allowing-access-to-calling-screen-casting-features",
+      "title": "Implement a required sign-in flow using Internet Identity, followed by a required profile step that collects and stores the user’s phone number (as plain text) before allowing access to calling/screen-casting features.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-webrtc-1-1-video-audio-calling-in-the-frontend-using-the-user-s-webcam-and-microphone-including-permission-prompts-and-local-preview-and-connect-peers-using-canister-mediated-signaling-offer-answer-ice-exchange",
+      "title": "Implement WebRTC 1:1 video/audio calling in the frontend using the user’s webcam and microphone, including permission prompts and local preview, and connect peers using canister-mediated signaling (offer/answer/ICE exchange).",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-outgoing-call-ux-a-phone-number-input-field-to-initiate-a-call-to-another-signed-in-user-and-an-in-call-control-set-at-minimum-end-call-optionally-mute-mic-disable-camera",
+      "title": "Add outgoing call UX: a phone-number input field to initiate a call to another signed-in user, and an in-call control set (at minimum: end call; optionally: mute mic / disable camera).",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-incoming-call-ux-inside-the-facetime-window-show-an-incoming-call-state-with-answer-decline-controls-and-only-establish-the-webrtc-connection-when-the-user-answers",
+      "title": "Add incoming call UX inside the facetime window: show an “Incoming call” state with Answer/Decline controls, and only establish the WebRTC connection when the user answers.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-the-main-viewing-layout-a-large-movie-screen-cast-area-and-a-small-facetime-window-anchored-to-the-bottom-left-as-an-overlay-the-facetime-window-must-be-the-smallest-window-on-screen-during-normal-viewing",
+      "title": "Implement the main viewing layout: a large “movie/screen-cast” area and a small facetime window anchored to the bottom-left as an overlay; the facetime window must be the smallest window on screen during normal viewing.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-screen-casting-screen-share-capability-allow-a-user-in-a-call-to-share-their-screen-and-render-the-shared-stream-in-the-large-movie-window-for-both-users-allow-stopping-screen-share-to-return-to-the-default-state",
+      "title": "Add screen-casting (screen share) capability: allow a user in a call to share their screen and render the shared stream in the large movie window for both users; allow stopping screen share to return to the default state.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enforce-only-one-active-screen-cast-at-a-time-per-call-session-via-backend-session-state-when-one-participant-is-currently-sharing-attempts-by-the-other-participant-to-start-screen-share-are-rejected-with-an-english-reminder-message",
+      "title": "Enforce “only one active screen cast at a time” per call session via backend session state: when one participant is currently sharing, attempts by the other participant to start screen share are rejected with an English reminder message.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-fullscreen-mode-for-the-movie-screen-cast-window-when-fullscreen-is-enabled-keep-the-facetime-window-visible-at-bottom-left-and-reduce-its-size-compared-to-non-fullscreen-mode",
+      "title": "Add fullscreen mode for the movie/screen-cast window; when fullscreen is enabled, keep the facetime window visible at bottom-left and reduce its size compared to non-fullscreen mode.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-coherent-visual-theme-for-fosco-and-apply-it-consistently-across-the-app-colors-typography-spacing-and-component-styling-suitable-for-a-co-watching-calling-product-avoid-default-looking-styling",
+      "title": "Create a coherent visual theme for FOSCO and apply it consistently across the app (colors, typography, spacing, and component styling) suitable for a “co-watching + calling” product; avoid default-looking styling.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Phone-number-based sign-in required to use the site",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Call other signed-in users by entering their phone number",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Incoming call UI with ability to answer from the facetime window",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Request and use webcam + microphone permissions for live video/audio calls",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "UI layout with small facetime window anchored bottom-left and a larger movie/screen-cast window",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Screen-cast to the movie window so the other caller can see the caster’s screen",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Allow only one active screen cast at a time; show error/reminder if both try to cast simultaneously",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Fullscreen mode for the movie window while keeping a smaller bottom-left facetime overlay",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Create backend data structures and APIs to register signed-in users as available (presence), map phone numbers to user principals, and allow lookup of a target user principal by phone number for calling.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "FOSCO",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

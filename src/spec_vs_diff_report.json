@@ -1,0 +1,133 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-16T15:01:21.013Z",
+  "summary": "The diff adds a basic II-gated app shell, profile capture/update UI, a bottom-left facetime overlay + movie window layout with fullscreen toggle, and partial call/screen-share scaffolding. However, several core directory/presence and calling requirements are either incomplete or not evidenced in the diff, especially phoneNumber→principal lookup, outgoing call initiation, full signaling (offer/answer/ICE polling) end-to-end, and screen-share transmission to the peer.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "Backend must store a directory mapping phone number -> principal and principal -> phone number; provide lookup of target principal by phone number; enforce unique phone number conflicts; and expose presence listing/confirmation for eligibility checks.",
+      "reason": "backend/main.mo only shows a Map<Principal, UserProfile> and a getUserByPhoneNumber that scans profile values and returns a UserProfile (not a Principal). There is no explicit phoneNumber->principal map, no principal->phoneNumber map separate from the profile, no uniqueness conflict handling for claiming a phone number, and no method to list currently available users (only isAvailable(principal)).",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/features/call/OutgoingCallPanel.tsx (comment: principal lookup not available)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Implement full WebRTC 1:1 calling with canister-mediated signaling (offer/answer/ICE) exchanged via backend endpoints and frontend polling, including proper call teardown that resets UI state for both sides.",
+      "reason": "The frontend hook useWebRTCCall shows sending ICE and offers via useSendSignal and polling via useFetchSignals, but the file is truncated before showing processing of polled signals (offer/answer/ICE), setting remote descriptions, adding ICE candidates, and completing the handshake. Backend signaling APIs (send/fetch/clear) are not evidenced in the visible portion of backend/main.mo (truncated). UI teardown for both sides (e.g., notifying the remote peer) is not evidenced; only local track stopping is partially shown (truncated).",
+      "evidence": [
+        "frontend/src/features/call/useWebRTCCall.ts (truncated)",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Outgoing call UX must allow entering a phone number and pressing a “Call” action to actually start calling an available user (show “User not available” if not available).",
+      "reason": "OutgoingCallPanel does not initiate a call. It looks up a profile via getUserByPhoneNumber and then explicitly errors: “Unable to initiate call - principal lookup not available”. It also does not call the webrtc startCall flow or backend initiateCall with a resolved callee principal.",
+      "evidence": [
+        "frontend/src/features/call/OutgoingCallPanel.tsx"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "requirement": "Incoming call UX must establish WebRTC only after the callee answers, and declining must notify the caller and return both to idle.",
+      "reason": "CallSurface’s answer handler checks for callStatus.__kind__ === 'inCall' even though the incoming UI renders when callStatus.__kind__ === 'incoming', so answering likely won’t run the intended logic. Also, decline calls endCall() locally, but remote notification behavior is not evidenced from the diff (backend answer/decline/end logic is truncated).",
+      "evidence": [
+        "frontend/src/features/call/CallSurface.tsx",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "requirement": "Screen-casting must show the shared screen in the large movie window for both users in the call, and stopping should return the movie window to an idle/placeholder state.",
+      "reason": "The movie window renders only the local screenStream from useScreenShare (getDisplayMedia). There is no evidence that the shared screen is sent over WebRTC to the remote peer (e.g., replacing video tracks / adding a screen track) or that the remote side renders the caster’s screen stream in the large window.",
+      "evidence": [
+        "frontend/src/features/layout/MovieWindow.tsx",
+        "frontend/src/features/screenShare/useScreenShare.ts",
+        "frontend/src/features/call/useWebRTCCall.ts (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "requirement": "Backend-enforced “only one active screen cast at a time” per call session; reject the other participant with an English reminder message.",
+      "reason": "Frontend shows an error mapping for an “already in progress” backend error, but the backend enforcement/state and the specific rejection error are not evidenced in the visible backend/main.mo (call status includes isScreenCasting/screenCaster fields, but the relevant enable/disable methods and enforcement are not shown due to truncation).",
+      "evidence": [
+        "frontend/src/features/screenShare/useScreenShare.ts",
+        "backend/main.mo (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "requirement": "Theme must not rely on a blue/purple primary palette and should be consistently applied across key screens.",
+      "reason": "The diff shows general styling and dark theme usage, but the actual palette choice (especially primary color) isn’t evidenced from the provided file contents. Because the UI heavily uses tokens like border-primary/text-primary, it’s unclear whether the palette constraint is met.",
+      "evidence": [
+        "frontend/src/App.tsx",
+        "frontend/src/features/layout/FoscoLayout.tsx",
+        "frontend/src/features/call/IncomingCallPrompt.tsx",
+        "frontend/src/features/profile/PhoneNumberSetupCard.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Admin-token based access-control initialization via a secret URL parameter (caffeineAdminToken) and authorization mixins.",
+      "reason": "Not requested in the BuildRequest; requirements focus on II auth + phone directory + calling/screen-cast features, not admin secret initialization.",
+      "evidence": [
+        "frontend/src/hooks/useActor.ts",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Caffeine.ai marketing footer link and “Built with ❤️” text.",
+      "reason": "Not requested as part of any requirement; introduces branding/attribution unrelated to FOSCO requirements.",
+      "evidence": [
+        "frontend/src/features/layout/FoscoLayout.tsx"
+      ]
+    },
+    {
+      "description": "Use of a movie emoji (🎬) in the MovieWindow placeholder.",
+      "reason": "User-facing text was specified to be in English for key labels/errors; adding emojis/placeholder styling was not requested.",
+      "evidence": [
+        "frontend/src/features/layout/MovieWindow.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.74,
+  "changed_files": [
+    "all_files_summary.json",
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/features/auth/LoginButton.tsx",
+    "frontend/src/features/branding/FoscoBranding.tsx",
+    "frontend/src/features/call/CallSurface.tsx",
+    "frontend/src/features/call/InCallControls.tsx",
+    "frontend/src/features/call/IncomingCallPrompt.tsx",
+    "frontend/src/features/call/OutgoingCallPanel.tsx",
+    "frontend/src/features/call/useCalleeLookup.ts",
+    "frontend/src/features/call/useWebRTCCall.ts",
+    "frontend/src/features/layout/FacetimeOverlay.tsx",
+    "frontend/src/features/layout/FoscoLayout.tsx",
+    "frontend/src/features/layout/MovieWindow.tsx",
+    "frontend/src/features/layout/useFullscreen.ts",
+    "frontend/src/features/profile/PhoneNumberSetupCard.tsx",
+    "frontend/src/features/profile/ProfileDialog.tsx",
+    "frontend/src/features/screenShare/ScreenShareControls.tsx",
+    "frontend/src/features/screenShare/useScreenShare.ts",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useAvailability.ts",
+    "frontend/src/hooks/useCallerProfile.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/lib/utils.ts",
+    "frontend/src/main.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}
