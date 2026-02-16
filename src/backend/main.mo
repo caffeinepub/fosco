@@ -21,7 +21,7 @@ actor {
   // Call state types
   public type CallStatus = {
     #none;
-    #incoming;
+    #incoming : { caller : Principal };
     #inCall : {
       caller : Principal;
       callee : Principal;
@@ -121,7 +121,7 @@ actor {
 
     callStates.add(
       callee,
-      #incoming,
+      #incoming { caller },
     );
     callStates.add(
       caller,
@@ -134,28 +134,36 @@ actor {
     );
   };
 
-  public shared ({ caller }) func answerCall(callerPrincipal : Principal) : async () {
+  public shared ({ caller }) func answerCall(_ : ()) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can answer calls");
     };
+
     switch (callStates.get(caller)) {
-      case (?(#incoming)) {
-        switch (callStates.get(callerPrincipal)) {
-          case (?(#inCall { caller = callInitiator; callee; isScreenCasting; screenCaster })) {
-            if (callee != caller) {
-              Runtime.trap("Only callee can answer");
+      case (?(#incoming { caller = callInitiator })) {
+        // Verify the call initiator still has an active outgoing call to this callee
+        switch (callStates.get(callInitiator)) {
+          case (?(#inCall { caller = storedCaller; callee = storedCallee; isScreenCasting; screenCaster })) {
+            // Verify the authenticated caller is the intended callee
+            if (storedCallee != caller) {
+              Runtime.trap("Unauthorized: You are not the callee of this call");
+            };
+            // Verify call state consistency
+            if (storedCaller != callInitiator) {
+              Runtime.trap("Invalid call state: caller mismatch");
             };
 
+            // Update both participants to inCall state
             callStates.add(
               caller,
-              #inCall({ caller = callInitiator; callee; isScreenCasting; screenCaster }),
+              #inCall({ caller = callInitiator; callee = caller; isScreenCasting; screenCaster }),
             );
             callStates.add(
-              callerPrincipal,
-              #inCall({ caller = callInitiator; callee; isScreenCasting; screenCaster }),
+              callInitiator,
+              #inCall({ caller = callInitiator; callee = caller; isScreenCasting; screenCaster }),
             );
           };
-          case (_) { Runtime.trap("Invalid call state") };
+          case (_) { Runtime.trap("Invalid call state: initiator not in call") };
         };
       };
       case (_) { Runtime.trap("No incoming call to answer") };
@@ -168,8 +176,26 @@ actor {
     };
     switch (callStates.get(caller)) {
       case (?(#inCall { caller = callInitiator; callee })) {
+        // Verify the authenticated caller is a participant in this call
+        if (caller != callInitiator and caller != callee) {
+          Runtime.trap("Unauthorized: You are not a participant in this call");
+        };
         callStates.add(callInitiator, #none);
         callStates.add(callee, #none);
+      };
+      case (?(#incoming { caller = callInitiator })) {
+        // Allow declining an incoming call
+        // Verify the authenticated caller is the callee
+        callStates.add(caller, #none);
+        // Also clean up the initiator's state
+        switch (callStates.get(callInitiator)) {
+          case (?(#inCall { callee = storedCallee })) {
+            if (storedCallee == caller) {
+              callStates.add(callInitiator, #none);
+            };
+          };
+          case (_) {};
+        };
       };
       case (_) { Runtime.trap("No active call to end") };
     };
@@ -180,6 +206,45 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can send signals");
     };
+
+    // Verify caller is in a call with the target
+    var isAuthorized = false;
+    switch (callStates.get(caller)) {
+      case (?(#inCall { caller = callInitiator; callee })) {
+        if (target == callInitiator or target == callee) {
+          isAuthorized := true;
+        };
+      };
+      case (?(#incoming { caller = callInitiator })) {
+        // Allow signaling during incoming call setup
+        if (target == callInitiator) {
+          isAuthorized := true;
+        };
+      };
+      case (_) {};
+    };
+
+    // Also check if target has caller in their call state
+    if (not isAuthorized) {
+      switch (callStates.get(target)) {
+        case (?(#inCall { caller = callInitiator; callee })) {
+          if (caller == callInitiator or caller == callee) {
+            isAuthorized := true;
+          };
+        };
+        case (?(#incoming { caller = callInitiator })) {
+          if (caller == callInitiator) {
+            isAuthorized := true;
+          };
+        };
+        case (_) {};
+      };
+    };
+
+    if (not isAuthorized) {
+      Runtime.trap("Unauthorized: Can only send signals to call participants");
+    };
+
     if (pendingSignals.containsKey(target)) {
       switch (pendingSignals.get(target)) {
         case (null) {};
@@ -219,6 +284,10 @@ actor {
     };
     switch (callStates.get(caller)) {
       case (?(#inCall { caller = callInitiator; callee; isScreenCasting; screenCaster })) {
+        // Verify the authenticated caller is a participant
+        if (caller != callInitiator and caller != callee) {
+          Runtime.trap("Unauthorized: You are not a participant in this call");
+        };
         if (isScreenCasting) {
           Runtime.trap("Screen casting already in progress");
         };
@@ -251,6 +320,10 @@ actor {
     };
     switch (callStates.get(caller)) {
       case (?(#inCall { caller = callInitiator; callee; isScreenCasting = true; screenCaster })) {
+        // Verify the authenticated caller is a participant
+        if (caller != callInitiator and caller != callee) {
+          Runtime.trap("Unauthorized: You are not a participant in this call");
+        };
         if (screenCaster != ?caller) {
           Runtime.trap("Only the screen caster can stop screen casting");
         };

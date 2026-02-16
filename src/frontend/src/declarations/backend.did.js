@@ -21,7 +21,7 @@ export const SignalMessage = IDL.Variant({
   'answer' : IDL.Text,
 });
 export const CallStatus = IDL.Variant({
-  'incoming' : IDL.Null,
+  'incoming' : IDL.Record({ 'caller' : IDL.Principal }),
   'none' : IDL.Null,
   'inCall' : IDL.Record({
     'screenCaster' : IDL.Opt(IDL.Principal),
@@ -37,7 +37,7 @@ export const UserProfile = IDL.Record({
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'answerCall' : IDL.Func([IDL.Principal], [], []),
+  'answerCall' : IDL.Func([IDL.Null], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'clearSignals' : IDL.Func([IDL.Null], [], []),
   'disableScreenCast' : IDL.Func([IDL.Null], [], []),
@@ -83,7 +83,7 @@ export const idlFactory = ({ IDL }) => {
     'answer' : IDL.Text,
   });
   const CallStatus = IDL.Variant({
-    'incoming' : IDL.Null,
+    'incoming' : IDL.Record({ 'caller' : IDL.Principal }),
     'none' : IDL.Null,
     'inCall' : IDL.Record({
       'screenCaster' : IDL.Opt(IDL.Principal),
@@ -99,7 +99,7 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'answerCall' : IDL.Func([IDL.Principal], [], []),
+    'answerCall' : IDL.Func([IDL.Null], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'clearSignals' : IDL.Func([IDL.Null], [], []),
     'disableScreenCast' : IDL.Func([IDL.Null], [], []),

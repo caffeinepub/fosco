@@ -37,9 +37,9 @@ export function useAnswerCall() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (callerPrincipal: Principal) => {
+    mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      await actor.answerCall(callerPrincipal);
+      await actor.answerCall(null);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['callStatus'] });

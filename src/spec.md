@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Enable phone-number-based calling by adding a backend phone-number → Principal lookup and updating the frontend call flow to use it, removing the current “principal lookup not available” failure.
+**Goal:** Fix the incoming call flow so the callee’s “Answer” and “Decline” buttons always perform the correct actions and transition call state correctly.
 
 **Planned changes:**
-- Add a permission-protected backend API that resolves a user Principal from a provided phone number, returning null/None when no match exists.
-- Implement the backend lookup by searching the existing in-memory profile map by phone number and returning the corresponding Principal.
-- Update the “Make a Call” frontend flow to resolve the callee Principal via the new backend lookup and then call the existing `initiateCall` mutation with that Principal.
-- Fix the frontend callee lookup hook to avoid redundant/incorrect calls, and to determine “user exists” vs “user available” by checking availability via the existing `isAvailable(principal)` API.
-- Remove the hardcoded toast “Unable to initiate call - principal lookup not available” from the call path and ensure any new/changed user-facing messages are English (and do not contain the misspelling “principle”).
+- Backend: Update the call status model for incoming calls to include the caller’s Principal, and adjust call lifecycle methods so callee answer/decline works reliably and resets both users to idle when declined.
+- Backend: Add/adjust upgrade-safe migration logic to handle persisted call state after the CallStatus type change (e.g., clear/transform old incoming entries).
+- Frontend: Wire the incoming call UI to use the caller Principal from the incoming-call payload; ensure Answer/Decline call the correct backend mutations and the prompt remains clickable during the incoming state.
 
-**User-visible outcome:** Users can enter a phone number in the “Make a Call” panel to successfully initiate calls to existing users; if the number is not found or the user is unavailable, the UI shows a clear English error message.
+**User-visible outcome:** When receiving a call, the callee can successfully press “Answer” to enter the in-call state or “Decline” to reject/end the call, returning both users to an idle/available state without dead buttons or backend traps.

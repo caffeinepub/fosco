@@ -10,7 +10,7 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export type CallStatus = { 'incoming' : null } |
+export type CallStatus = { 'incoming' : { 'caller' : Principal } } |
   { 'none' : null } |
   {
     'inCall' : {
@@ -31,7 +31,7 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'answerCall' : ActorMethod<[Principal], undefined>,
+  'answerCall' : ActorMethod<[null], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearSignals' : ActorMethod<[null], undefined>,
   'disableScreenCast' : ActorMethod<[null], undefined>,

@@ -1,13 +1,13 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 7,
+  "projectStateVersion": 9,
   "summary": "Build FOSCO: a web app for real-time video calling (via webcam/mic) while co-watching by screen casting, with phone-number-based sign-in and a UI that keeps a small video-call window in the bottom-left over a larger movie/screen-cast window.",
   "architectural_notes": [
     "Use real-time browser media (webcam/mic) for video calls (e.g., WebRTC).",
     "Use browser screen-capture for screen casting (e.g., getDisplayMedia) with single-caster enforcement."
   ],
   "known_issues": [
-    "Calling fails with error \"Unable to initiate call - principle lookup not available\" indicating principal lookup/phone-number-to-principal resolution is not available; users cannot initiate calls."
+    "Incoming call UI: callee cannot press (or buttons are non-functional for) Accept/Decline, preventing answering/declining calls."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -114,6 +114,22 @@
         "REQ-15"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-fix-the-incoming-call-flow-so-that-the-callee-can-successfully-press-answer-or-decline-and-the-app-performs-the-correct-call-actions-no-op-clicks-must-be-eliminated",
+      "title": "Fix the incoming call flow so that the callee can successfully press “Answer” or “Decline” and the app performs the correct call actions (no-op clicks must be eliminated).",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-frontend-incoming-call-ui-wiring-to-use-the-incoming-call-caller-principal-provided-by-the-backend-and-call-the-correct-backend-mutations-for-answer-decline-so-the-buttons-always-have-an-effect",
+      "title": "Update the frontend incoming call UI wiring to use the incoming-call caller Principal provided by the backend, and call the correct backend mutations for answer/decline so the buttons always have an effect.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -184,6 +200,22 @@
       "summary": "Add a backend API that allows an authenticated user to resolve a callee Principal from a phone number so that phone-number-based calling can be initiated without the current \"principal lookup not available\" limitation.",
       "reqIds": [
         "REQ-13"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Update the backend call status model so that the callee’s incoming call state includes sufficient information to answer/decline (at minimum: the caller’s Principal), and update backend call lifecycle methods accordingly.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "If changing the backend CallStatus type requires an upgrade-safe state transition, add/adjust backend migration logic to handle existing persisted state safely (e.g., clear or transform callStates for old incoming entries).",
+      "reqIds": [
+        "REQ-19"
       ],
       "status": "pending"
     }

@@ -111,7 +111,9 @@ export interface UserProfile {
 }
 export type CallStatus = {
     __kind__: "incoming";
-    incoming: null;
+    incoming: {
+        caller: Principal;
+    };
 } | {
     __kind__: "none";
     none: null;
@@ -131,7 +133,7 @@ export enum UserRole {
 }
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
-    answerCall(callerPrincipal: Principal): Promise<void>;
+    answerCall(arg0: null): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearSignals(arg0: null): Promise<void>;
     disableScreenCast(arg0: null): Promise<void>;
@@ -169,7 +171,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async answerCall(arg0: Principal): Promise<void> {
+    async answerCall(arg0: null): Promise<void> {
         if (this.processError) {
             try {
                 const result = await this.actor.answerCall(arg0);
@@ -536,7 +538,9 @@ function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uin
     } : value;
 }
 function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    incoming: null;
+    incoming: {
+        caller: Principal;
+    };
 } | {
     none: null;
 } | {
@@ -548,7 +552,9 @@ function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uin
     };
 }): {
     __kind__: "incoming";
-    incoming: null;
+    incoming: {
+        caller: Principal;
+    };
 } | {
     __kind__: "none";
     none: null;

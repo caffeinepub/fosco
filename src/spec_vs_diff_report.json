@@ -1,45 +1,35 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T21:03:27.377Z",
-  "summary": "Backend adds a phoneNumber→Principal resolution API and related state, and frontend updates outgoing call flow and callee lookup to use it with availability checks. However, the backend API currently traps on not-found and returns a non-optional Principal, and a new Motoko module file was introduced despite the constraint to keep logic within backend/main.mo.",
+  "generatedAt": "2026-02-16T21:17:57.199Z",
+  "summary": "Diff updates the backend CallStatus to include caller Principal in the #incoming variant, adds a migration module to clear old incoming states on upgrade, and rewires the frontend CallSurface Answer handler to use the incoming caller Principal. However, the diff summary is truncated for backend call lifecycle methods, so key acceptance-criteria behaviors (initiateCall storing caller into callee incoming state; safe decline/reset of both participants; endCall/decline behavior for incoming) are not verifiably implemented from the provided evidence.",
   "missing_requirements": [
     {
-      "id": "REQ-13",
-      "requirement": "Backend method takes a phone number (Text) and returns the matching user Principal (or null/None when not found).",
-      "reason": "Implemented method `getPrincipalFromPhoneNumber` returns `async Principal` and traps when the phone number is not found, rather than returning an optional/None result.",
+      "id": "REQ-17",
+      "requirement": "initiateCall stores the caller Principal in the callee’s incoming call status; callee can decline without trapping; declining resets both participants’ callStates back to #none; answering transitions both participants to the in-call state using the same caller/callee principals.",
+      "reason": "Although the CallStatus type was changed to include #incoming : { caller : Principal }, the actual call lifecycle function bodies (initiateCall/answerCall/endCall/decline handling) are not shown in the truncated backend/main.mo diff, so the required state writes/resets and trap-free decline behavior cannot be confirmed.",
       "evidence": [
-        "backend/main.mo: `func getPrincipalFromPhoneNumber(phoneNumber : Text) : async Principal` ... `case (null) { Runtime.trap(\"Number \" # phoneNumber # \" not registered!\") }`"
+        "backend/main.mo (truncated at initiateCall implementation)"
       ]
     },
     {
-      "id": "REQ-13",
-      "requirement": "Lookup implementation searches the existing in-memory profile map by phone number and returns the corresponding principal (not just the profile).",
-      "reason": "The implementation performs lookup via a separate `phoneToPrincipal` map rather than searching the existing `userProfiles` map by phone number as specified.",
+      "id": "REQ-18",
+      "requirement": "handleDecline calls a backend path that correctly rejects/ends an incoming call (no backend trap), and the UI returns to the idle state afterwards.",
+      "reason": "Frontend handleDecline calls endCall(), but the diff summary does not include backend endCall logic, so it cannot be verified that endCall safely handles rejecting an incoming call and resets both users to idle without trapping.",
       "evidence": [
-        "backend/main.mo: `let phoneToPrincipal = Map.empty<Text, Principal>();` and `switch (phoneToPrincipal.get(phoneNumber))`",
-        "backend/migration.mo: introduces/populates `phoneToPrincipal` from `old.userProfiles`"
+        "frontend/src/features/call/CallSurface.tsx",
+        "backend/main.mo (endCall implementation not shown/truncated)"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "Added a new backend Motoko module `backend/migration.mo` and introduced migration wiring `(with migration = Migration.run)` plus persistent `phoneToPrincipal` state.",
-      "reason": "BuildRequest constraint specifies keeping all Motoko logic within the existing single actor in `backend/main.mo` (no additional backend services/modules). The diff adds a new Motoko file and migration layer not explicitly requested by REQ-13/14/15.",
-      "evidence": [
-        "backend/migration.mo (new file)",
-        "backend/main.mo: `import Migration \"migration\";` and `(with migration = Migration.run)`",
-        "backend/main.mo: `let phoneToPrincipal = Map.empty<Text, Principal>();`"
-      ]
-    }
-  ],
-  "confidence": 0.74,
+  "hallucinated_features": [],
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/features/call/OutgoingCallPanel.tsx",
-    "frontend/src/features/call/useCalleeLookup.ts",
+    "frontend/src/features/call/CallSurface.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]
 }

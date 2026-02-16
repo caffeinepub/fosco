@@ -29,7 +29,9 @@ export interface UserProfile {
 }
 export type CallStatus = {
     __kind__: "incoming";
-    incoming: null;
+    incoming: {
+        caller: Principal;
+    };
 } | {
     __kind__: "none";
     none: null;
@@ -48,7 +50,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
-    answerCall(callerPrincipal: Principal): Promise<void>;
+    answerCall(arg0: null): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearSignals(arg0: null): Promise<void>;
     disableScreenCast(arg0: null): Promise<void>;

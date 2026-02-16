@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-frontend-outgoing-call-flow-to-use-the-new-backend-phone-number-to-principal-lookup-and-successfully-call-actor-initiatecall-with-the-resolved-principal-removing-the-hardcoded-error-toast-unable-to-initiate-call-principal-lookup-not-available",
-      "featureTitle": "Update the frontend outgoing call flow to use the new backend phone-number-to-principal lookup and successfully call actor.initiateCall with the resolved Principal, removing the hardcoded error toast \"Unable to initiate call - principal lookup not available\".",
+      "featureId": "feature-fix-the-incoming-call-flow-so-that-the-callee-can-successfully-press-answer-or-decline-and-the-app-performs-the-correct-call-actions-no-op-clicks-must-be-eliminated",
+      "featureTitle": "Fix the incoming call flow so that the callee can successfully press “Answer” or “Decline” and the app performs the correct call actions (no-op clicks must be eliminated).",
       "files": [
-        "frontend/src/features/call/OutgoingCallPanel.tsx"
+        "frontend/src/features/call/CallSurface.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,16 +17,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-14"
+        "REQ-16"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-fix-the-frontend-callee-lookup-hook-so-it-does-not-perform-redundant-incorrect-calls-currently-calling-getuserbyphonenumber-twice-and-so-it-can-accurately-report-1-user-exists-2-user-is-available-using-principal-based-availability-checks",
-      "featureTitle": "Fix the frontend callee lookup hook so it does not perform redundant/incorrect calls (currently calling getUserByPhoneNumber twice) and so it can accurately report: (1) user exists, (2) user is available, using principal-based availability checks.",
+      "featureId": "feature-update-the-frontend-incoming-call-ui-wiring-to-use-the-incoming-call-caller-principal-provided-by-the-backend-and-call-the-correct-backend-mutations-for-answer-decline-so-the-buttons-always-have-an-effect",
+      "featureTitle": "Update the frontend incoming call UI wiring to use the incoming-call caller Principal provided by the backend, and call the correct backend mutations for answer/decline so the buttons always have an effect.",
       "files": [
-        "frontend/src/features/call/OutgoingCallPanel.tsx",
-        "frontend/src/features/call/useCalleeLookup.ts"
+        "frontend/src/features/call/CallSurface.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -38,7 +38,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-15"
+        "REQ-18"
       ],
       "confidence": "high"
     }

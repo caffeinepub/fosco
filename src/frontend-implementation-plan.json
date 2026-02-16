@@ -1,43 +1,47 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix phone-number-based callee principal lookup in outgoing call flow (frontend)",
+  "title": "Fix callee incoming call Answer/Decline wiring",
   "requirements": [
     {
-      "id": "REQ-14",
-      "summary": "Update the outgoing call UI to resolve callee Principal from a phone number and initiate calls without the legacy hardcoded error.",
+      "id": "REQ-16",
+      "summary": "Ensure incoming-call Answer/Decline buttons are actionable for the callee and drive correct UI state transitions.",
       "acceptanceCriteria": [
-        "From the \"Make a Call\" panel, entering a valid phone number for an existing user resolves the callee principal and initiates the call via the existing initiateCall mutation.",
-        "The previous toast message \"Unable to initiate call - principal lookup not available\" is no longer shown in normal operation and is removed from the call path.",
-        "If the phone number does not match any user, the UI shows an English error message indicating the user was not found.",
-        "If the callee exists but is not available, the UI shows an English error message indicating the user is not available."
+        "When a user is receiving a call (incoming state), clicking “Answer” triggers the answer flow and transitions the UI into the in-call state.",
+        "When a user is receiving a call (incoming state), clicking “Decline” ends/rejects the call and returns both users to an idle/available state.",
+        "The “Answer” button is not gated by an incorrect callStatus kind check (i.e., it must be actionable while in the incoming state)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/features/call/OutgoingCallPanel.tsx",
+          "path": "frontend/src/features/call/CallSurface.tsx",
           "operation": "modify",
-          "description": "Replace the current phone-number call path (which calls getUserByPhoneNumber and then toasts the hardcoded principal-lookup error) with a flow that uses the callee lookup result to obtain the callee Principal and then calls the existing useInitiateCall mutation with that Principal. Ensure user-facing errors are English and show \"User not found\" when no match exists and \"User is not available\" when the user exists but availability is false. Remove the legacy toast string entirely from the call path."
+          "description": "Fix callee incoming-call action handlers so Answer is enabled for CallStatus.__kind__ === 'incoming' (not 'inCall'); use the incoming payload’s caller Principal for WebRTC answer setup; ensure Decline triggers a real reject/end action and locally tears down any in-progress WebRTC state so the UI returns to idle."
+        },
+        {
+          "path": "frontend/src/features/call/IncomingCallPrompt.tsx",
+          "operation": "modify",
+          "description": "Ensure the incoming prompt remains clearly clickable and reflects action-in-progress states (e.g., disable buttons only while mutations are pending) without breaking existing Answer/Decline handler wiring."
         }
       ]
     },
     {
-      "id": "REQ-15",
-      "summary": "Fix the callee lookup hook to avoid redundant calls and report existence vs availability using principal-based availability checks.",
+      "id": "REQ-18",
+      "summary": "Wire incoming-call UI to use backend-provided caller Principal and invoke the correct backend mutations for answer/decline so clicks always have an effect.",
       "acceptanceCriteria": [
-        "The callee lookup uses phone number to obtain the callee principal (via the new backend lookup) and then checks availability using the existing backend isAvailable(principal) API.",
-        "The lookup returns consistent results: \"User not found\" only when no principal/profile exists for the phone number; \"User not available\" only when the user exists but is not available.",
-        "All user-facing error strings introduced/changed by this requirement are in English."
+        "frontend/src/features/call/CallSurface.tsx: handleAnswer uses the incoming call payload (caller Principal) rather than reading from the in-call payload.",
+        "frontend/src/features/call/CallSurface.tsx: handleDecline calls a backend path that correctly rejects/ends an incoming call (no backend trap), and the UI returns to the idle state afterwards.",
+        "IncomingCallPrompt remains clickable and does not appear “dead” due to missing handler logic."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/features/call/useCalleeLookup.ts",
+          "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Refactor lookupByPhoneNumber to: (1) normalize/trim the phone number once, (2) resolve the callee Principal via actor.getPrincipalFromPhoneNumber(phoneNumber), (3) only if a Principal is resolved, fetch the profile once (as needed for display) and check availability via actor.isAvailable(principal). Update the hook return shape to include the resolved Principal and availability status so callers can reliably distinguish \"User not found\" vs \"User is not available\" without duplicating backend calls."
+          "description": "Align call-action mutations with the current backend interface for answering/ending calls (e.g., answerCall/endCall argument shapes) and ensure successful mutations invalidate the callStatus query so the UI reliably transitions out of incoming and into in-call/idle states."
         },
         {
-          "path": "frontend/src/features/call/OutgoingCallPanel.tsx",
+          "path": "frontend/src/features/call/CallSurface.tsx",
           "operation": "modify",
-          "description": "Update the panel to consume the revised useCalleeLookup result (including callee Principal and availability status) so it no longer performs any redundant lookup calls and always initiates calls with the resolved Principal when available."
+          "description": "Update handleAnswer/handleDecline to use the backend-provided CallStatus.incoming.caller Principal for WebRTC setup while calling the correct backend mutations for answering/declining; remove any no-op guards so button clicks always trigger the intended flows."
         }
       ]
     }

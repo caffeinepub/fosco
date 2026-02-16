@@ -1,45 +1,53 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T21:03:27.380Z",
+  "generatedAt": "2026-02-16T21:17:57.202Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
+    "total": 4,
     "implemented": 2,
     "items": [
       {
-        "id": "REQ-13",
-        "summary": "Add a backend API that allows an authenticated user to resolve a callee Principal from a phone number so that phone-number-based calling can be initiated without the current \"principal lookup not available\" limitation.",
+        "id": "REQ-16",
+        "summary": "Fix the incoming call flow so that the callee can successfully press “Answer” or “Decline” and the app performs the correct call actions (no-op clicks must be eliminated).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/features/call/CallSurface.tsx",
+          "frontend/src/features/call/IncomingCallPrompt.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/features/call/CallSurface.tsx"
+        ]
+      },
+      {
+        "id": "REQ-17",
+        "summary": "Update the backend call status model so that the callee’s incoming call state includes sufficient information to answer/decline (at minimum: the caller’s Principal), and update backend call lifecycle methods accordingly.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-14",
-        "summary": "Update the frontend outgoing call flow to use the new backend phone-number-to-principal lookup and successfully call actor.initiateCall with the resolved Principal, removing the hardcoded error toast \"Unable to initiate call - principal lookup not available\".",
+        "id": "REQ-18",
+        "summary": "Update the frontend incoming call UI wiring to use the incoming-call caller Principal provided by the backend, and call the correct backend mutations for answer/decline so the buttons always have an effect.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/features/call/OutgoingCallPanel.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/features/call/CallSurface.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/features/call/OutgoingCallPanel.tsx"
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/features/call/CallSurface.tsx"
         ]
       },
       {
-        "id": "REQ-15",
-        "summary": "Fix the frontend callee lookup hook so it does not perform redundant/incorrect calls (currently calling getUserByPhoneNumber twice) and so it can accurately report: (1) user exists, (2) user is available, using principal-based availability checks.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/features/call/useCalleeLookup.ts",
-          "frontend/src/features/call/OutgoingCallPanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/features/call/useCalleeLookup.ts",
-          "frontend/src/features/call/OutgoingCallPanel.tsx"
-        ]
+        "id": "REQ-19",
+        "summary": "If changing the backend CallStatus type requires an upgrade-safe state transition, add/adjust backend migration logic to handle existing persisted state safely (e.g., clear or transform callStates for old incoming entries).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
@@ -47,17 +55,15 @@
     "backend/main.mo",
     "backend/migration.mo",
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/config.ts",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
-    "frontend/src/features/call/OutgoingCallPanel.tsx",
-    "frontend/src/features/call/useCalleeLookup.ts",
+    "frontend/src/features/call/CallSurface.tsx",
+    "frontend/src/hooks/useQueries.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

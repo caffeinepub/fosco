@@ -3,7 +3,6 @@ import { useWebRTCCall } from './useWebRTCCall';
 import { useGetCallStatus, useAnswerCall, useEndCall } from '../../hooks/useQueries';
 import IncomingCallPrompt from './IncomingCallPrompt';
 import InCallControls from './InCallControls';
-import { Principal } from '@dfinity/principal';
 
 interface CallSurfaceProps {
   onCallStateChange?: (isInCall: boolean) => void;
@@ -14,8 +13,8 @@ export default function CallSurface({ onCallStateChange }: CallSurfaceProps) {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   const { data: callStatus } = useGetCallStatus();
-  const { mutate: answerCall } = useAnswerCall();
-  const { mutate: endCall } = useEndCall();
+  const { mutate: answerCall, isPending: isAnswering } = useAnswerCall();
+  const { mutate: endCall, isPending: isDeclining } = useEndCall();
 
   const {
     localStream,
@@ -50,9 +49,9 @@ export default function CallSurface({ onCallStateChange }: CallSurfaceProps) {
   }, [callStatus, onCallStateChange]);
 
   const handleAnswer = () => {
-    if (callStatus?.__kind__ === 'inCall') {
-      const callerPrincipal = callStatus.inCall.caller;
-      answerCall(callerPrincipal);
+    if (callStatus?.__kind__ === 'incoming') {
+      const callerPrincipal = callStatus.incoming.caller;
+      answerCall();
       webrtcAnswerCall(callerPrincipal);
     }
   };
@@ -74,6 +73,7 @@ export default function CallSurface({ onCallStateChange }: CallSurfaceProps) {
           callerName="User"
           onAnswer={handleAnswer}
           onDecline={handleDecline}
+          disabled={isAnswering || isDeclining}
         />
       </div>
     );

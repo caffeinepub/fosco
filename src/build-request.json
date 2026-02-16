@@ -1,85 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Fix phone-number-to-principal lookup so users can initiate calls",
+  "title": "Fix incoming call Accept/Decline actions for callee",
   "projectName": "FOSCO",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-13",
-      "text": "Add a backend API that allows an authenticated user to resolve a callee Principal from a phone number so that phone-number-based calling can be initiated without the current \"principal lookup not available\" limitation.",
+      "id": "REQ-16",
+      "text": "Fix the incoming call flow so that the callee can successfully press “Answer” or “Decline” and the app performs the correct call actions (no-op clicks must be eliminated).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-6"
+        ],
+        "quotes": [
+          "I am now able to call other users, however the users who I call are unable to press the accept or decline buttons. Please fix this problem"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When a user is receiving a call (incoming state), clicking “Answer” triggers the answer flow and transitions the UI into the in-call state.",
+        "When a user is receiving a call (incoming state), clicking “Decline” ends/rejects the call and returns both users to an idle/available state.",
+        "The “Answer” button is not gated by an incorrect callStatus kind check (i.e., it must be actionable while in the incoming state)."
+      ]
+    },
+    {
+      "id": "REQ-17",
+      "text": "Update the backend call status model so that the callee’s incoming call state includes sufficient information to answer/decline (at minimum: the caller’s Principal), and update backend call lifecycle methods accordingly.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-6"
         ],
         "quotes": [
-          "When I try to call a user it is telling me \"Unable to initiate call - principle lookup not available\" please enable users to initiate calls and ensure that principle lookup is available."
+          "users who I call are unable to press the accept or decline buttons"
         ]
       },
       "acceptanceCriteria": [
-        "Backend exposes a method that takes a phone number (Text) and returns the matching user Principal (or null/None when not found).",
-        "The lookup is permission-protected consistently with existing profile lookup endpoints (user permission required).",
-        "The lookup implementation searches the existing in-memory profile map by phone number and returns the corresponding principal (not just the profile).",
-        "No user-facing trap message contains the misspelling \"principle\"; any new user-facing text is English."
+        "backend/main.mo: The CallStatus variant for an incoming call carries the caller Principal (e.g., incoming-with-caller), so the frontend can call answer/decline with the correct party reference.",
+        "backend/main.mo: initiateCall stores the caller Principal in the callee’s incoming call status.",
+        "backend/main.mo: The callee can decline an incoming call without trapping; declining resets both participants’ callStates back to #none (or equivalent idle state).",
+        "backend/main.mo: Existing answer behavior continues to work, and answering transitions both participants to the in-call state using the same caller/callee principals."
       ]
     },
     {
-      "id": "REQ-14",
-      "text": "Update the frontend outgoing call flow to use the new backend phone-number-to-principal lookup and successfully call actor.initiateCall with the resolved Principal, removing the hardcoded error toast \"Unable to initiate call - principal lookup not available\".",
+      "id": "REQ-18",
+      "text": "Update the frontend incoming call UI wiring to use the incoming-call caller Principal provided by the backend, and call the correct backend mutations for answer/decline so the buttons always have an effect.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-6"
         ],
         "quotes": [
-          "Unable to initiate call - principle lookup not available"
+          "unable to press the accept or decline buttons"
         ]
       },
       "acceptanceCriteria": [
-        "From the \"Make a Call\" panel, entering a valid phone number for an existing user resolves the callee principal and initiates the call via the existing initiateCall mutation.",
-        "The previous toast message \"Unable to initiate call - principal lookup not available\" is no longer shown in normal operation and is removed from the call path.",
-        "If the phone number does not match any user, the UI shows an English error message indicating the user was not found.",
-        "If the callee exists but is not available, the UI shows an English error message indicating the user is not available."
+        "frontend/src/features/call/CallSurface.tsx: handleAnswer uses the incoming call payload (caller Principal) rather than reading from the in-call payload.",
+        "frontend/src/features/call/CallSurface.tsx: handleDecline calls a backend path that correctly rejects/ends an incoming call (no backend trap), and the UI returns to the idle state afterwards.",
+        "IncomingCallPrompt remains clickable and does not appear “dead” due to missing handler logic."
       ]
     },
     {
-      "id": "REQ-15",
-      "text": "Fix the frontend callee lookup hook so it does not perform redundant/incorrect calls (currently calling getUserByPhoneNumber twice) and so it can accurately report: (1) user exists, (2) user is available, using principal-based availability checks.",
-      "target": "frontend",
+      "id": "REQ-19",
+      "text": "If changing the backend CallStatus type requires an upgrade-safe state transition, add/adjust backend migration logic to handle existing persisted state safely (e.g., clear or transform callStates for old incoming entries).",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-6"
         ]
       },
       "acceptanceCriteria": [
-        "The callee lookup uses phone number to obtain the callee principal (via the new backend lookup) and then checks availability using the existing backend isAvailable(principal) API.",
-        "The lookup returns consistent results: \"User not found\" only when no principal/profile exists for the phone number; \"User not available\" only when the user exists but is not available.",
-        "All user-facing error strings introduced/changed by this requirement are in English."
+        "A canister upgrade does not fail due to the CallStatus type change.",
+        "After upgrade, users are not stuck in a broken incoming state from pre-upgrade data."
       ]
     }
   ],
   "constraints": [
-    "Keep all Motoko logic within the existing single actor in backend/main.mo (no additional backend services).",
-    "Do not edit frontend files under the immutable paths listed in SYSTEM_CONTEXT (compose existing UI components instead).",
-    "Do not introduce external databases or third-party auth; Internet Identity remains the only auth mechanism."
+    "Keep all Motoko logic in the single actor in backend/main.mo (single-actor architecture).",
+    "Do not edit files under frontend/src/components/ui or any frontend immutablePaths listed in SYSTEM_CONTEXT; compose those components instead.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not add contact syncing, address book integration, or phone number verification via SMS.",
-    "Do not change the overall call UI/UX beyond what is required to make principal lookup work and calling succeed.",
-    "Do not implement group calling or multi-party sessions."
+    "Adding group calls or multi-party calling.",
+    "Adding third-party authentication providers (only Internet Identity).",
+    "Adding real-time transport mechanisms beyond the existing polling-based signaling design."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

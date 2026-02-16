@@ -1,65 +1,75 @@
 import Map "mo:core/Map";
-import List "mo:core/List";
-import Text "mo:core/Text";
 import Principal "mo:core/Principal";
+import List "mo:core/List";
 
 module {
-  type UserProfile = {
-    phoneNumber : Text;
-    displayName : Text;
+  // Old types
+  type OldCallStatus = {
+    #none;
+    #incoming;
+    #inCall : {
+      caller : Principal;
+      callee : Principal;
+      isScreenCasting : Bool;
+      screenCaster : ?Principal;
+    };
+  };
+
+  type OldSignalMessage = {
+    #offer : Text;
+    #answer : Text;
+    #iceCandidate : Text;
+    #screenShareRequest;
+    #screenShareStop;
   };
 
   type OldActor = {
-    userProfiles : Map.Map<Principal, UserProfile>;
-    callStates : Map.Map<Principal, {
-      #none;
-      #incoming;
-      #inCall : {
-        caller : Principal;
-        callee : Principal;
-        isScreenCasting : Bool;
-        screenCaster : ?Principal;
-      };
-    }>;
-    pendingSignals : Map.Map<Principal, List.List<{
-      #offer : Text;
-      #answer : Text;
-      #iceCandidate : Text;
-      #screenShareRequest;
-      #screenShareStop;
-    }>>;
+    userProfiles : Map.Map<Principal, { phoneNumber : Text; displayName : Text }>;
+    phoneToPrincipal : Map.Map<Text, Principal>;
+    callStates : Map.Map<Principal, OldCallStatus>;
+    pendingSignals : Map.Map<Principal, List.List<OldSignalMessage>>;
+  };
+
+  // New types
+  type NewCallStatus = {
+    #none;
+    #incoming : { caller : Principal };
+    #inCall : {
+      caller : Principal;
+      callee : Principal;
+      isScreenCasting : Bool;
+      screenCaster : ?Principal;
+    };
+  };
+
+  type NewSignalMessage = {
+    #offer : Text;
+    #answer : Text;
+    #iceCandidate : Text;
+    #screenShareRequest;
+    #screenShareStop;
   };
 
   type NewActor = {
-    userProfiles : Map.Map<Principal, UserProfile>;
+    userProfiles : Map.Map<Principal, { phoneNumber : Text; displayName : Text }>;
     phoneToPrincipal : Map.Map<Text, Principal>;
-    callStates : Map.Map<Principal, {
-      #none;
-      #incoming;
-      #inCall : {
-        caller : Principal;
-        callee : Principal;
-        isScreenCasting : Bool;
-        screenCaster : ?Principal;
-      };
-    }>;
-    pendingSignals : Map.Map<Principal, List.List<{
-      #offer : Text;
-      #answer : Text;
-      #iceCandidate : Text;
-      #screenShareRequest;
-      #screenShareStop;
-    }>>;
+    callStates : Map.Map<Principal, NewCallStatus>;
+    pendingSignals : Map.Map<Principal, List.List<NewSignalMessage>>;
   };
 
   public func run(old : OldActor) : NewActor {
-    let phoneToPrincipal = Map.empty<Text, Principal>();
-
-    // Populate phoneToPrincipal map from existing userProfiles
-    for ((principal, profile) in old.userProfiles.entries()) {
-      phoneToPrincipal.add(profile.phoneNumber, principal);
+    let newCallStates = old.callStates.map<Principal, OldCallStatus, NewCallStatus>(
+      func(_principal, status) {
+        switch (status) {
+          case (#none) { #none };
+          case (#incoming) { #none };
+          case (#inCall(data)) { #inCall(data) };
+        };
+      }
+    );
+    {
+      old with
+      callStates = newCallStates
     };
-
-    { old with phoneToPrincipal };
   };
 };
