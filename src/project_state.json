@@ -1,14 +1,15 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
+  "projectStateVersion": 7,
   "summary": "Build FOSCO: a web app for real-time video calling (via webcam/mic) while co-watching by screen casting, with phone-number-based sign-in and a UI that keeps a small video-call window in the bottom-left over a larger movie/screen-cast window.",
   "architectural_notes": [
     "Use real-time browser media (webcam/mic) for video calls (e.g., WebRTC).",
     "Use browser screen-capture for screen casting (e.g., getDisplayMedia) with single-caster enforcement."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
-  "imageRequirements": "## Required Images\n- FOSCO logo mark (fosco-logo.dim_512x512.png)\n- FOSCO wordmark lockup (fosco-wordmark.dim_1200x300.png)",
+  "known_issues": [
+    "Calling fails with error \"Unable to initiate call - principle lookup not available\" indicating principal lookup/phone-number-to-principal resolution is not available; users cannot initiate calls."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-implement-a-required-sign-in-flow-using-internet-identity-followed-by-a-required-profile-step-that-collects-and-stores-the-user-s-phone-number-as-plain-text-before-allowing-access-to-calling-screen-casting-features",
@@ -81,6 +82,38 @@
         "REQ-10"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-add-a-share-button-to-the-authenticated-app-header-in-the-main-layout-header-next-to-the-existing-profile-and-login-logout-controls-that-lets-users-share-the-fosco-app-link-with-others",
+      "title": "Add a Share button to the authenticated app header (in the main layout header next to the existing Profile and Login/Logout controls) that lets users share the FOSCO app link with others.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-share-button-behavior-using-the-browser-web-share-api-when-available-otherwise-provide-a-fallback-that-copies-the-share-link-to-the-clipboard-and-shows-a-confirmation-toast-user-facing-text-must-be-in-english",
+      "title": "Implement Share button behavior using the browser Web Share API when available; otherwise provide a fallback that copies the share link to the clipboard and shows a confirmation toast. User-facing text must be in English.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-frontend-outgoing-call-flow-to-use-the-new-backend-phone-number-to-principal-lookup-and-successfully-call-actor-initiatecall-with-the-resolved-principal-removing-the-hardcoded-error-toast-unable-to-initiate-call-principal-lookup-not-available",
+      "title": "Update the frontend outgoing call flow to use the new backend phone-number-to-principal lookup and successfully call actor.initiateCall with the resolved Principal, removing the hardcoded error toast \"Unable to initiate call - principal lookup not available\".",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-frontend-callee-lookup-hook-so-it-does-not-perform-redundant-incorrect-calls-currently-calling-getuserbyphonenumber-twice-and-so-it-can-accurately-report-1-user-exists-2-user-is-available-using-principal-based-availability-checks",
+      "title": "Fix the frontend callee lookup hook so it does not perform redundant/incorrect calls (currently calling getUserByPhoneNumber twice) and so it can accurately report: (1) user exists, (2) user is available, using principal-based availability checks.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -137,6 +170,20 @@
       "summary": "Create backend data structures and APIs to register signed-in users as available (presence), map phone numbers to user principals, and allow lookup of a target user principal by phone number for calling.",
       "reqIds": [
         "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Add a Share button so users can share FOSCO with others (e.g., link sharing)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Add a backend API that allows an authenticated user to resolve a callee Principal from a phone number so that phone-number-based calling can be initiated without the current \"principal lookup not available\" limitation.",
+      "reqIds": [
+        "REQ-13"
       ],
       "status": "pending"
     }

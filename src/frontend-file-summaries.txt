@@ -6,9 +6,9 @@
   "frontend/src/features/auth/LoginButton.tsx": "Login/logout button component with Internet Identity integration and query cache clearing on logout.",
   "frontend/src/features/profile/PhoneNumberSetupCard.tsx": "Profile setup card that collects user's name and phone number after initial authentication, blocking access until complete.",
   "frontend/src/features/profile/ProfileDialog.tsx": "Settings dialog for viewing and updating user profile information (name and phone number).",
-  "frontend/src/features/call/useCalleeLookup.ts": "Hook for looking up users by phone number and validating availability before initiating calls.",
+  "frontend/src/features/call/useCalleeLookup.ts": "Hook for looking up users by phone number that resolves the callee Principal via getPrincipalFromPhoneNumber, checks availability via isAvailable, and returns profile, principal, availability status, and error for reliable call initiation.",
   "frontend/src/features/call/useWebRTCCall.ts": "Core WebRTC call management hook handling peer connections, media streams, signaling, and call lifecycle with ICE candidate exchange.",
-  "frontend/src/features/call/OutgoingCallPanel.tsx": "UI panel for initiating outgoing calls by entering a phone number with validation and error handling.",
+  "frontend/src/features/call/OutgoingCallPanel.tsx": "UI panel for initiating outgoing calls by entering a phone number, using the resolved principal from callee lookup to initiate calls with proper error handling for \"User not found\" and \"User is not available\" cases.",
   "frontend/src/features/call/InCallControls.tsx": "In-call control buttons for muting audio, toggling video, and ending calls.",
   "frontend/src/features/call/IncomingCallPrompt.tsx": "Incoming call notification UI with answer and decline buttons displayed in the facetime overlay.",
   "frontend/src/features/call/CallSurface.tsx": "Main call surface component that manages call states (idle, incoming, in-call) and renders video elements with controls.",
@@ -17,9 +17,10 @@
   "frontend/src/features/layout/useFullscreen.ts": "Hook for managing fullscreen mode using the Fullscreen API with enter, exit, and toggle functions, accepting nullable HTMLElement refs.",
   "frontend/src/features/layout/MovieWindow.tsx": "Large movie/screen-cast display area with fullscreen toggle and idle state placeholder.",
   "frontend/src/features/layout/FacetimeOverlay.tsx": "Bottom-left positioned overlay container for video call UI that adjusts size based on fullscreen state.",
-  "frontend/src/features/layout/FoscoLayout.tsx": "Main application layout orchestrating movie window, facetime overlay, call controls, and screen sharing with header and footer.",
+  "frontend/src/features/layout/FoscoLayout.tsx": "Main application layout orchestrating movie window, facetime overlay, call controls, screen sharing, and header with share button, profile dialog, and login controls.",
   "frontend/src/features/branding/FoscoBranding.tsx": "Branding component displaying FOSCO logo and wordmark in small or large sizes.",
   "frontend/src/lib/utils.ts": "Utility function for merging Tailwind CSS classes with clsx and tailwind-merge.",
   "frontend/src/index.css": "Global styles with OKLCH-based color system using magenta/purple primary palette (avoiding blue) for light and dark modes.",
-  "frontend/tailwind.config.js": "Tailwind configuration with extended theme colors, border radius, and animations matching the FOSCO design system."
+  "frontend/tailwind.config.js": "Tailwind configuration with extended theme colors, border radius, and animations matching the FOSCO design system.",
+  "frontend/src/features/share/ShareButton.tsx": "Share button component that uses Web Share API when available, with clipboard copy fallback and toast notifications for success/error states."
 }

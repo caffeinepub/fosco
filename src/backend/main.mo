@@ -6,7 +6,9 @@ import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -39,6 +41,7 @@ actor {
 
   // State storage
   let userProfiles = Map.empty<Principal, UserProfile>();
+  let phoneToPrincipal = Map.empty<Text, Principal>();
   let callStates = Map.empty<Principal, CallStatus>();
   let pendingSignals = Map.empty<Principal, List.List<SignalMessage>>();
 
@@ -61,7 +64,19 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
+
     userProfiles.add(caller, profile);
+    phoneToPrincipal.add(profile.phoneNumber, caller);
+  };
+
+  public shared ({ caller }) func getPrincipalFromPhoneNumber(phoneNumber : Text) : async Principal {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can lookup by phone number");
+    };
+    switch (phoneToPrincipal.get(phoneNumber)) {
+      case (?principal) { principal };
+      case (null) { Runtime.trap("Number " # phoneNumber # " not registered!") };
+    };
   };
 
   public query ({ caller }) func getUserByPhoneNumber(phoneNumber : Text) : async ?UserProfile {

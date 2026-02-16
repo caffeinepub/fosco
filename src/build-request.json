@@ -1,214 +1,85 @@
 {
   "kind": "build_request",
-  "title": "FOSCO: Phone-number directory, WebRTC calling + screen casting with bottom-left facetime overlay",
-  "priority": "normal",
+  "title": "Fix phone-number-to-principal lookup so users can initiate calls",
+  "projectName": "FOSCO",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Implement a required sign-in flow using Internet Identity, followed by a required profile step that collects and stores the user’s phone number (as plain text) before allowing access to calling/screen-casting features.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "you are required to enter your phone number to complete the sign in process"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Unauthenticated users are prompted to sign in with Internet Identity before reaching the main app UI.",
-        "After authentication, users who have not saved a phone number are blocked from the main calling UI until they submit a phone number.",
-        "A user can view and update their saved phone number in the app settings/profile area.",
-        "User-facing text is in English (e.g., labels like “Phone number”, “Save”, and validation errors)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Create backend data structures and APIs to register signed-in users as available (presence), map phone numbers to user principals, and allow lookup of a target user principal by phone number for calling.",
+      "id": "REQ-13",
+      "text": "Add a backend API that allows an authenticated user to resolve a callee Principal from a phone number so that phone-number-based calling can be initiated without the current \"principal lookup not available\" limitation.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "Users will be able to facetime anyone who is signed into the website",
-          "users will type in the person’s phone number who they want to facetime with to call them"
+          "When I try to call a user it is telling me \"Unable to initiate call - principle lookup not available\" please enable users to initiate calls and ensure that principle lookup is available."
         ]
       },
       "acceptanceCriteria": [
-        "The backend stores a directory mapping phone number -> principal and principal -> phone number.",
-        "The backend exposes methods to register/update a user’s phone number and to look up a callee by phone number.",
-        "The backend exposes a method to list/confirm which users are currently signed in/available (at least for call eligibility checks).",
-        "Phone-number uniqueness conflicts are handled with a clear error (e.g., cannot claim a phone number already registered to a different principal)."
+        "Backend exposes a method that takes a phone number (Text) and returns the matching user Principal (or null/None when not found).",
+        "The lookup is permission-protected consistently with existing profile lookup endpoints (user permission required).",
+        "The lookup implementation searches the existing in-memory profile map by phone number and returns the corresponding principal (not just the profile).",
+        "No user-facing trap message contains the misspelling \"principle\"; any new user-facing text is English."
       ]
     },
     {
-      "id": "REQ-3",
-      "text": "Implement WebRTC 1:1 video/audio calling in the frontend using the user’s webcam and microphone, including permission prompts and local preview, and connect peers using canister-mediated signaling (offer/answer/ICE exchange).",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "the website will ask to be able to access the user’s webcam and microphone so users will be able to see and hear each other"
-        ]
-      },
-      "acceptanceCriteria": [
-        "On first attempt to start/answer a call, the app requests webcam/microphone permissions and shows a clear error state if denied.",
-        "When a call is connected, both users can see and hear each other with a stable WebRTC peer connection.",
-        "Signaling messages (offer/answer/ICE candidates) are exchanged via backend endpoints; the frontend uses polling to fetch pending signaling messages.",
-        "Call teardown works: ending a call stops local media tracks, closes the peer connection, and resets UI state for both sides."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add outgoing call UX: a phone-number input field to initiate a call to another signed-in user, and an in-call control set (at minimum: end call; optionally: mute mic / disable camera).",
+      "id": "REQ-14",
+      "text": "Update the frontend outgoing call flow to use the new backend phone-number-to-principal lookup and successfully call actor.initiateCall with the resolved Principal, removing the hardcoded error toast \"Unable to initiate call - principal lookup not available\".",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "users will type in the person’s phone number who they want to facetime with to call them"
+          "Unable to initiate call - principle lookup not available"
         ]
       },
       "acceptanceCriteria": [
-        "The user can enter a phone number and press a “Call” action to start calling.",
-        "If the phone number does not map to an available/signed-in user, the app shows an English error message (e.g., “User not available”).",
-        "During an active call, an “End call” control is present and works reliably."
+        "From the \"Make a Call\" panel, entering a valid phone number for an existing user resolves the callee principal and initiates the call via the existing initiateCall mutation.",
+        "The previous toast message \"Unable to initiate call - principal lookup not available\" is no longer shown in normal operation and is removed from the call path.",
+        "If the phone number does not match any user, the UI shows an English error message indicating the user was not found.",
+        "If the callee exists but is not available, the UI shows an English error message indicating the user is not available."
       ]
     },
     {
-      "id": "REQ-5",
-      "text": "Add incoming call UX inside the facetime window: show an “Incoming call” state with Answer/Decline controls, and only establish the WebRTC connection when the user answers.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "When a user is being called, they’re facetime window will say there is an incoming call and they can answer it by pushing the answer button."
-        ]
-      },
-      "acceptanceCriteria": [
-        "When one user calls another, the callee sees an “Incoming call” prompt with “Answer” and “Decline” buttons within the facetime window area.",
-        "Declining a call notifies the caller and returns both UIs to idle.",
-        "Answering a call starts media capture (if not already granted), exchanges signaling, and transitions to the in-call UI."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Implement the main viewing layout: a large “movie/screen-cast” area and a small facetime window anchored to the bottom-left as an overlay; the facetime window must be the smallest window on screen during normal viewing.",
+      "id": "REQ-15",
+      "text": "Fix the frontend callee lookup hook so it does not perform redundant/incorrect calls (currently calling getUserByPhoneNumber twice) and so it can accurately report: (1) user exists, (2) user is available, using principal-based availability checks.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "The facetime window will be the smallest window on the screen, and will just be in the bottom left corner of the screen.",
-          "To watch a movie, show, or any type of video, users will have the option to cast their screen to the movie window"
+          "msg-5"
         ]
       },
       "acceptanceCriteria": [
-        "The screen-cast/movie area occupies the primary portion of the page.",
-        "The facetime window is visually smaller than the movie area and is anchored bottom-left as an overlay.",
-        "The facetime overlay remains visible while watching/casting content."
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "text": "Add screen-casting (screen share) capability: allow a user in a call to share their screen and render the shared stream in the large movie window for both users; allow stopping screen share to return to the default state.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "users will have the option to cast their screen to the movie window, which will allow the person who they facetime with to see everything on their screen."
-        ]
-      },
-      "acceptanceCriteria": [
-        "A user can start screen share using the browser screen-capture prompt.",
-        "When screen share is active, the large movie window shows the shared screen for both participants.",
-        "Stopping screen share returns the large movie window to an idle/placeholder state (or other appropriate non-shared state).",
-        "If screen-capture permission is denied, the app shows an English error message and remains stable."
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "text": "Enforce “only one active screen cast at a time” per call session via backend session state: when one participant is currently sharing, attempts by the other participant to start screen share are rejected with an English reminder message.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "Only one screen can be casted at a time, so if both of the users who are facetiming try to screen-cast at the same time, the screen will tell them to try again and remind them that only one of them can screen-cast at a time, and that they should decide who will be the one to screen cast."
-        ]
-      },
-      "acceptanceCriteria": [
-        "When participant A is sharing, participant B attempting to start sharing is blocked.",
-        "Participant B sees an English message reminding them that only one person can screen-cast at a time and to decide who will share.",
-        "When the active sharer stops sharing, the other participant can start sharing successfully."
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "text": "Add fullscreen mode for the movie/screen-cast window; when fullscreen is enabled, keep the facetime window visible at bottom-left and reduce its size compared to non-fullscreen mode.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "users will have the option of making the movie window full screen, although the facetime window will still appear at the bottom left, but it will be a bit smaller than when out of full screen"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The user can toggle fullscreen for the movie/screen-cast area.",
-        "In fullscreen, the facetime overlay remains visible at bottom-left and is smaller than in non-fullscreen mode.",
-        "Exiting fullscreen restores the previous layout and facetime overlay size."
-      ]
-    },
-    {
-      "id": "REQ-10",
-      "text": "Create a coherent visual theme for FOSCO and apply it consistently across the app (colors, typography, spacing, and component styling) suitable for a “co-watching + calling” product; avoid default-looking styling.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "“FOSCO” which is short for “Facetime Others and Screen Cast Others.”"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The app uses a consistent, intentional visual theme (not the default template look).",
-        "Theme is applied across key screens: phone-number profile step, main calling layout, incoming call state, in-call controls, and screen-share controls.",
-        "Theme does not rely on a blue/purple primary palette."
+        "The callee lookup uses phone number to obtain the callee principal (via the new backend lookup) and then checks availability using the existing backend isAvailable(principal) API.",
+        "The lookup returns consistent results: \"User not found\" only when no principal/profile exists for the phone number; \"User not available\" only when the user exists but is not available.",
+        "All user-facing error strings introduced/changed by this requirement are in English."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor with all logic in the main actor file.",
-    "Do not modify files under frontend/src/components/ui (compose these components instead).",
-    "Do not modify immutable hook/entry paths listed in SYSTEM_CONTEXT (compose around them).",
-    "Phone number “sign-in” must not rely on SMS/third-party phone verification services; treat phone number as a required user profile field after Internet Identity login.",
-    "No WebSockets; implement signaling/presence updates using canister calls with polling."
+    "Keep all Motoko logic within the existing single actor in backend/main.mo (no additional backend services).",
+    "Do not edit frontend files under the immutable paths listed in SYSTEM_CONTEXT (compose existing UI components instead).",
+    "Do not introduce external databases or third-party auth; Internet Identity remains the only auth mechanism."
   ],
   "nonGoals": [
-    "Building or integrating with Apple FaceTime (use in-browser WebRTC instead).",
-    "Hosting/streaming copyrighted movies inside the app; only support screen sharing of the user’s own screen.",
-    "Multi-party/group calls (scope is 1:1 calling).",
-    "Real-time chat/messaging beyond call signaling.",
-    "External databases or third-party auth providers beyond Internet Identity."
+    "Do not add contact syncing, address book integration, or phone number verification via SMS.",
+    "Do not change the overall call UI/UX beyond what is required to make principal lookup work and calling succeed.",
+    "Do not implement group calling or multi-party sessions."
   ],
   "imageRequirements": {
-    "required": [
-      "FOSCO logo mark (fosco-logo.dim_512x512.png)",
-      "FOSCO wordmark lockup (fosco-wordmark.dim_1200x300.png)"
-    ],
+    "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

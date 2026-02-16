@@ -41,6 +41,7 @@ export interface _SERVICE {
   'getCallStatus' : ActorMethod<[null], CallStatus>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getPrincipalFromPhoneNumber' : ActorMethod<[string], Principal>,
   'getUserByPhoneNumber' : ActorMethod<[string], [] | [UserProfile]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'initiateCall' : ActorMethod<[Principal], undefined>,

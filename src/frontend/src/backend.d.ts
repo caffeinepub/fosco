@@ -58,6 +58,7 @@ export interface backendInterface {
     getCallStatus(arg0: null): Promise<CallStatus>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getPrincipalFromPhoneNumber(phoneNumber: string): Promise<Principal>;
     getUserByPhoneNumber(phoneNumber: string): Promise<UserProfile | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     initiateCall(callee: Principal): Promise<void>;

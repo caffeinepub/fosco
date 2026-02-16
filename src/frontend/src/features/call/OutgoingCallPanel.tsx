@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useCalleeLookup } from './useCalleeLookup';
-import { useActor } from '../../hooks/useActor';
 import { useInitiateCall } from '../../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,35 +15,35 @@ export default function OutgoingCallPanel({ onCallInitiated }: OutgoingCallPanel
   const [phoneNumber, setPhoneNumber] = useState('');
   const { lookupByPhoneNumber, isLookingUp } = useCalleeLookup();
   const { mutate: initiateCall, isPending: isInitiating } = useInitiateCall();
-  const { actor } = useActor();
 
   const handleCall = async () => {
-    const { profile, error } = await lookupByPhoneNumber(phoneNumber);
+    const { principal, isAvailable, error } = await lookupByPhoneNumber(phoneNumber);
 
     if (error) {
       toast.error(error);
       return;
     }
 
-    if (!profile || !actor) {
-      toast.error('User not available');
+    if (!principal) {
+      toast.error('User not found');
       return;
     }
 
-    // Get the principal for this phone number
-    try {
-      const userProfile = await actor.getUserByPhoneNumber(phoneNumber.trim());
-      if (!userProfile) {
-        toast.error('User not available');
-        return;
-      }
-
-      // For now, we need to find a way to get the principal
-      // This is a limitation - we'll need to store principal in the profile or have a separate lookup
-      toast.error('Unable to initiate call - principal lookup not available');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to initiate call');
+    if (!isAvailable) {
+      toast.error('User is not available');
+      return;
     }
+
+    // Initiate the call with the resolved principal
+    initiateCall(principal, {
+      onSuccess: () => {
+        onCallInitiated(principal.toString());
+        setPhoneNumber('');
+      },
+      onError: (err: any) => {
+        toast.error(err.message || 'Failed to initiate call');
+      },
+    });
   };
 
   const isLoading = isLookingUp || isInitiating;

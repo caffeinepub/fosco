@@ -47,6 +47,7 @@ export const idlService = IDL.Service({
   'getCallStatus' : IDL.Func([IDL.Null], [CallStatus], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getPrincipalFromPhoneNumber' : IDL.Func([IDL.Text], [IDL.Principal], []),
   'getUserByPhoneNumber' : IDL.Func(
       [IDL.Text],
       [IDL.Opt(UserProfile)],
@@ -108,6 +109,7 @@ export const idlFactory = ({ IDL }) => {
     'getCallStatus' : IDL.Func([IDL.Null], [CallStatus], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getPrincipalFromPhoneNumber' : IDL.Func([IDL.Text], [IDL.Principal], []),
     'getUserByPhoneNumber' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(UserProfile)],

@@ -141,6 +141,7 @@ export interface backendInterface {
     getCallStatus(arg0: null): Promise<CallStatus>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getPrincipalFromPhoneNumber(phoneNumber: string): Promise<Principal>;
     getUserByPhoneNumber(phoneNumber: string): Promise<UserProfile | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     initiateCall(callee: Principal): Promise<void>;
@@ -306,6 +307,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getCallerUserRole();
             return from_candid_UserRole_n11(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPrincipalFromPhoneNumber(arg0: string): Promise<Principal> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPrincipalFromPhoneNumber(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPrincipalFromPhoneNumber(arg0);
+            return result;
         }
     }
     async getUserByPhoneNumber(arg0: string): Promise<UserProfile | null> {

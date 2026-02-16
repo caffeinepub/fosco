@@ -4,6 +4,7 @@ import { useGetCallStatus } from '../../hooks/useQueries';
 import { useScreenShare } from '../screenShare/useScreenShare';
 import LoginButton from '../auth/LoginButton';
 import ProfileDialog from '../profile/ProfileDialog';
+import ShareButton from '../share/ShareButton';
 import FoscoBranding from '../branding/FoscoBranding';
 import MovieWindow from './MovieWindow';
 import FacetimeOverlay from './FacetimeOverlay';
@@ -40,6 +41,7 @@ export default function FoscoLayout() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <FoscoBranding size="small" />
           <div className="flex items-center gap-2">
+            <ShareButton />
             <ProfileDialog />
             <LoginButton />
           </div>

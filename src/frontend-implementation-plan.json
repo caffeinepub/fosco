@@ -1,282 +1,43 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "FOSCO Frontend: II-gated co-watching layout with WebRTC calling + screen casting",
+  "title": "Fix phone-number-based callee principal lookup in outgoing call flow (frontend)",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Gate the app behind Internet Identity and require a saved phone number profile before enabling calling/screen-casting; allow viewing/updating phone number in-profile.",
+      "id": "REQ-14",
+      "summary": "Update the outgoing call UI to resolve callee Principal from a phone number and initiate calls without the legacy hardcoded error.",
       "acceptanceCriteria": [
-        "Unauthenticated users are prompted to sign in with Internet Identity before reaching the main app UI.",
-        "After authentication, users who have not saved a phone number are blocked from the main calling UI until they submit a phone number.",
-        "A user can view and update their saved phone number in the app settings/profile area.",
-        "User-facing text is in English (e.g., labels like “Phone number”, “Save”, and validation errors)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "create",
-          "description": "Create the top-level app shell that (1) requires Internet Identity sign-in before showing the main UI, (2) fetches the caller profile, and (3) gates the call/screen-cast UI until a phone number is saved; incorporate a profile/settings surface for viewing/updating the phone number. Use the selected \"authorization\" component patterns for II login state + profile fetching and ensure cached app data is cleared on logout. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/auth/LoginButton.tsx",
-          "operation": "create",
-          "description": "Add a dedicated Login/Logout button component wired to the existing Internet Identity hook and React Query cache clearing, following the selected \"authorization\" component guidance. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/profile/PhoneNumberSetupCard.tsx",
-          "operation": "create",
-          "description": "Create the required post-login profile step UI that collects a phone number (plain text) with English labels/validation, and persists it via backend profile save; blocks access to calling features until successful save. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/profile/ProfileDialog.tsx",
-          "operation": "create",
-          "description": "Create a settings/profile dialog to view and update the saved phone number (and any other required profile fields) from within the app shell. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useCallerProfile.ts",
-          "operation": "create",
-          "description": "Create React Query hooks to load/save the caller profile (including phone number) using the backend actor; ensure loading states avoid profile-step flash after actor initialization per the selected \"authorization\" component guidance. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useAvailability.ts",
-          "operation": "create",
-          "description": "Create a hook that marks the signed-in user available/unavailable in the backend while the app is active (including cleanup on unmount/visibility changes), and does not run for unauthenticated users."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Implement 1:1 WebRTC video/audio calling with permissions, local preview, and polling-based canister-mediated signaling (offer/answer/ICE), including teardown/reset.",
-      "acceptanceCriteria": [
-        "On first attempt to start/answer a call, the app requests webcam/microphone permissions and shows a clear error state if denied.",
-        "When a call is connected, both users can see and hear each other with a stable WebRTC peer connection.",
-        "Signaling messages (offer/answer/ICE candidates) are exchanged via backend endpoints; the frontend uses polling to fetch pending signaling messages.",
-        "Call teardown works: ending a call stops local media tracks, closes the peer connection, and resets UI state for both sides."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/features/call/useWebRTCCall.ts",
-          "operation": "create",
-          "description": "Implement a call controller hook that manages RTCPeerConnection lifecycle, local media capture (camera + microphone), remote stream handling, and teardown/reset; integrate signaling via backend send/fetch/clear calls with polling (no WebSockets). Use the selected \"camera\" component (useCamera hook) to support a reliable local camera preview and permission/error UI; handle microphone permission via getUserMedia audio constraints. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/call/useSignalingPolling.ts",
-          "operation": "create",
-          "description": "Create a polling loop hook that periodically fetches pending signaling messages from the backend actor, routes them to the WebRTC controller (offer/answer/ICE + screen-share control messages), and clears processed messages; include backoff/stop conditions when unauthenticated or idle."
-        },
-        {
-          "path": "frontend/src/features/call/MediaPermissionBanner.tsx",
-          "operation": "create",
-          "description": "Add a reusable UI component that renders clear English permission-denied / not-supported errors for camera/microphone and provides a retry action for the user. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/call/CallSurface.tsx",
-          "operation": "create",
-          "description": "Create the main call rendering surface wiring local preview and remote video/audio elements to the WebRTC controller, and exposing callbacks for placing/answering/ending calls; ensure teardown stops tracks and resets UI. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Provide outgoing call UX with phone-number input and in-call controls (end call, plus optional mute/camera toggles).",
-      "acceptanceCriteria": [
-        "The user can enter a phone number and press a “Call” action to start calling.",
-        "If the phone number does not map to an available/signed-in user, the app shows an English error message (e.g., “User not available”).",
-        "During an active call, an “End call” control is present and works reliably."
+        "From the \"Make a Call\" panel, entering a valid phone number for an existing user resolves the callee principal and initiates the call via the existing initiateCall mutation.",
+        "The previous toast message \"Unable to initiate call - principal lookup not available\" is no longer shown in normal operation and is removed from the call path.",
+        "If the phone number does not match any user, the UI shows an English error message indicating the user was not found.",
+        "If the callee exists but is not available, the UI shows an English error message indicating the user is not available."
       ],
       "file_operations": [
         {
           "path": "frontend/src/features/call/OutgoingCallPanel.tsx",
-          "operation": "create",
-          "description": "Create the outgoing call UI with a phone-number input and a Call action; look up the callee via backend directory lookup and show an English error state when unavailable; initiate call via backend and hand off to the WebRTC controller. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/call/InCallControls.tsx",
-          "operation": "create",
-          "description": "Create in-call control buttons including End call (required) and optional Mute mic / Disable camera toggles that update local media tracks and UI state. Verify the component's usage instructions before implementing."
-        },
+          "operation": "modify",
+          "description": "Replace the current phone-number call path (which calls getUserByPhoneNumber and then toasts the hardcoded principal-lookup error) with a flow that uses the callee lookup result to obtain the callee Principal and then calls the existing useInitiateCall mutation with that Principal. Ensure user-facing errors are English and show \"User not found\" when no match exists and \"User is not available\" when the user exists but availability is false. Remove the legacy toast string entirely from the call path."
+        }
+      ]
+    },
+    {
+      "id": "REQ-15",
+      "summary": "Fix the callee lookup hook to avoid redundant calls and report existence vs availability using principal-based availability checks.",
+      "acceptanceCriteria": [
+        "The callee lookup uses phone number to obtain the callee principal (via the new backend lookup) and then checks availability using the existing backend isAvailable(principal) API.",
+        "The lookup returns consistent results: \"User not found\" only when no principal/profile exists for the phone number; \"User not available\" only when the user exists but is not available.",
+        "All user-facing error strings introduced/changed by this requirement are in English."
+      ],
+      "file_operations": [
         {
           "path": "frontend/src/features/call/useCalleeLookup.ts",
-          "operation": "create",
-          "description": "Implement a small helper hook for validating/normalizing phone input (as plain text) and querying the backend for a matching available user, returning English errors suitable for the outgoing call panel."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Show incoming call prompt inside the facetime overlay with Answer/Decline and only establish WebRTC after answering; notify caller on decline.",
-      "acceptanceCriteria": [
-        "When one user calls another, the callee sees an “Incoming call” prompt with “Answer” and “Decline” buttons within the facetime window area.",
-        "Declining a call notifies the caller and returns both UIs to idle.",
-        "Answering a call starts media capture (if not already granted), exchanges signaling, and transitions to the in-call UI."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/features/call/IncomingCallPrompt.tsx",
-          "operation": "create",
-          "description": "Implement the facetime-overlay incoming call UI state with English text and Answer/Decline buttons; Answer triggers media capture + signaling start, Decline triggers backend decline behavior and resets UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/call/useCallStatusPolling.ts",
-          "operation": "create",
-          "description": "Add a polling hook for backend call status so the UI can transition among idle/incoming/in-call states without WebSockets; wire into the call surface and facetime overlay rendering."
-        },
-        {
-          "path": "frontend/src/features/call/CallSurface.tsx",
           "operation": "modify",
-          "description": "Wire the incoming call state into the facetime overlay area, ensuring WebRTC peer connection setup begins only after Answer, and that Decline/End transitions return to idle reliably. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Build the main co-watching layout with a large movie/screen-cast area and a small facetime overlay anchored bottom-left that remains visible.",
-      "acceptanceCriteria": [
-        "The screen-cast/movie area occupies the primary portion of the page.",
-        "The facetime window is visually smaller than the movie area and is anchored bottom-left as an overlay.",
-        "The facetime overlay remains visible while watching/casting content."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/features/layout/FoscoLayout.tsx",
-          "operation": "create",
-          "description": "Create the main layout component that renders a primary movie/screen-cast area and a bottom-left facetime overlay that stays visible across idle/incoming/in-call states; ensure the overlay is the smallest window in normal viewing. Verify the component's usage instructions before implementing."
+          "description": "Refactor lookupByPhoneNumber to: (1) normalize/trim the phone number once, (2) resolve the callee Principal via actor.getPrincipalFromPhoneNumber(phoneNumber), (3) only if a Principal is resolved, fetch the profile once (as needed for display) and check availability via actor.isAvailable(principal). Update the hook return shape to include the resolved Principal and availability status so callers can reliably distinguish \"User not found\" vs \"User is not available\" without duplicating backend calls."
         },
         {
-          "path": "frontend/src/features/layout/MovieWindow.tsx",
-          "operation": "create",
-          "description": "Create the large movie/screen-cast area component with idle placeholder state and a slot for rendering a remote screen-share stream when active. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/layout/FacetimeOverlay.tsx",
-          "operation": "create",
-          "description": "Create the bottom-left overlay container that hosts local/remote call video, incoming prompt, and controls; ensure consistent sizing constraints so it never collapses. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/features/call/OutgoingCallPanel.tsx",
           "operation": "modify",
-          "description": "Wire the FoscoLayout into the authenticated+profile-complete portion of the app, ensuring navigation to the main UI is not possible until REQ-1 gates pass. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Add screen-casting (screen share) in-call: start/stop capture and render the shared stream in the large movie window for both participants with stable error handling.",
-      "acceptanceCriteria": [
-        "A user can start screen share using the browser screen-capture prompt.",
-        "When screen share is active, the large movie window shows the shared screen for both participants.",
-        "Stopping screen share returns the large movie window to an idle/placeholder state (or other appropriate non-shared state).",
-        "If screen-capture permission is denied, the app shows an English error message and remains stable."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/features/screenShare/useScreenShare.ts",
-          "operation": "create",
-          "description": "Implement screen-share controller logic using getDisplayMedia, integrating with the existing RTCPeerConnection by replacing/adding the appropriate video track and sending screen-share start/stop signaling to the peer via backend calls; handle permission-denied with English errors and stable rollback."
-        },
-        {
-          "path": "frontend/src/features/screenShare/ScreenShareControls.tsx",
-          "operation": "create",
-          "description": "Create Start/Stop screen share controls surfaced during a call; display English errors for denied permissions and reflect active state. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/layout/MovieWindow.tsx",
-          "operation": "modify",
-          "description": "Render the incoming remote screen-share stream in the movie window when active and revert to idle/placeholder when stopped; keep the facetime overlay visible above it. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/call/useWebRTCCall.ts",
-          "operation": "modify",
-          "description": "Integrate screen-share track replacement and remote track handling so that remote screen share is displayed in the movie window while keeping call video in the facetime overlay; ensure stop returns to default state cleanly. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "summary": "Enforce and surface the “only one active screen cast at a time” rule in the UI by handling backend rejections and showing an English reminder message.",
-      "acceptanceCriteria": [
-        "When participant A is sharing, participant B attempting to start sharing is blocked.",
-        "Participant B sees an English message reminding them that only one person can screen-cast at a time and to decide who will share.",
-        "When the active sharer stops sharing, the other participant can start sharing successfully."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/features/screenShare/useScreenShare.ts",
-          "operation": "modify",
-          "description": "Handle backend refusal when attempting to enable screen casting while the peer is already sharing; surface a clear English reminder message and keep the app stable without starting local capture."
-        },
-        {
-          "path": "frontend/src/features/screenShare/ScreenShareControls.tsx",
-          "operation": "modify",
-          "description": "Display the English reminder message when screen-share activation is blocked by the one-at-a-time rule, and automatically clear the message when sharing becomes available again. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "summary": "Add fullscreen mode for the movie/screen-cast window while keeping a smaller bottom-left facetime overlay visible in fullscreen and restoring layout on exit.",
-      "acceptanceCriteria": [
-        "The user can toggle fullscreen for the movie/screen-cast area.",
-        "In fullscreen, the facetime overlay remains visible at bottom-left and is smaller than in non-fullscreen mode.",
-        "Exiting fullscreen restores the previous layout and facetime overlay size."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/features/layout/useFullscreen.ts",
-          "operation": "create",
-          "description": "Create a small hook that wraps the Fullscreen API for the movie window container and exposes fullscreen state, enter/exit actions, and change listeners with safe cleanup."
-        },
-        {
-          "path": "frontend/src/features/layout/MovieWindow.tsx",
-          "operation": "modify",
-          "description": "Add a fullscreen toggle control for the movie/screen-cast area using the fullscreen hook; ensure it works during idle and active screen-share states. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/features/layout/FoscoLayout.tsx",
-          "operation": "modify",
-          "description": "Adjust facetime overlay sizing when fullscreen is active (smaller than non-fullscreen) while keeping it anchored bottom-left and visible; restore prior sizing on exit. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-10",
-      "summary": "Apply a cohesive non-default FOSCO visual theme (no blue/purple primary) across auth/profile, main layout, call states, and controls.",
-      "acceptanceCriteria": [
-        "The app uses a consistent, intentional visual theme (not the default template look).",
-        "Theme is applied across key screens: phone-number profile step, main calling layout, incoming call state, in-call controls, and screen-share controls.",
-        "Theme does not rely on a blue/purple primary palette."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/index.css",
-          "operation": "create",
-          "description": "Define global theme tokens (colors/typography/spacing) and base styles for the app using existing Tailwind/CSS variable conventions; choose a primary palette that is not blue/purple and apply consistent background/surface/overlay styling."
-        },
-        {
-          "path": "frontend/tailwind.config.js",
-          "operation": "modify",
-          "description": "Extend Tailwind theme to support the FOSCO palette and consistent component surfaces (movie area, overlay, controls) while keeping styling cohesive and non-default."
-        },
-        {
-          "path": "frontend/public/assets/generated/fosco-logo.dim_512x512.png",
-          "operation": "create",
-          "description": "Add the generated FOSCO logo asset at the required path for use in the UI (static frontend asset)."
-        },
-        {
-          "path": "frontend/public/assets/generated/fosco-wordmark.dim_1200x300.png",
-          "operation": "create",
-          "description": "Add the generated FOSCO wordmark asset at the required path for use in the UI (static frontend asset)."
-        },
-        {
-          "path": "frontend/src/features/branding/FoscoBranding.tsx",
-          "operation": "create",
-          "description": "Create a small branding component that renders the generated assets (logo/wordmark) in the authenticated shell and in the sign-in/profile steps to reinforce theme consistency. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire FoscoBranding into the sign-in/profile gating and main layout so the theme and branding are consistently visible across key screens. Verify the component's usage instructions before implementing."
+          "description": "Update the panel to consume the revised useCalleeLookup result (including callee Principal and availability status) so it no longer performs any redundant lookup calls and always initiates calls with the resolved Principal when available."
         }
       ]
     }
