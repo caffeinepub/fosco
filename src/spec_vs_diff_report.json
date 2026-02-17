@@ -1,24 +1,16 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-16T21:17:57.199Z",
-  "summary": "Diff updates the backend CallStatus to include caller Principal in the #incoming variant, adds a migration module to clear old incoming states on upgrade, and rewires the frontend CallSurface Answer handler to use the incoming caller Principal. However, the diff summary is truncated for backend call lifecycle methods, so key acceptance-criteria behaviors (initiateCall storing caller into callee incoming state; safe decline/reset of both participants; endCall/decline behavior for incoming) are not verifiably implemented from the provided evidence.",
+  "generatedAt": "2026-02-17T01:04:10.759Z",
+  "summary": "Frontend changes add explicit rendering of an incoming-call prompt in CallSurface, wire Answer/Decline to backend mutations with toast/error handling, and update WebRTC hook structure to buffer/process signals. Backend changes are truncated and do not provide enough evidence that Answer/Decline mutations correctly transition both participants’ call states as required.",
   "missing_requirements": [
     {
-      "id": "REQ-17",
-      "requirement": "initiateCall stores the caller Principal in the callee’s incoming call status; callee can decline without trapping; declining resets both participants’ callStates back to #none; answering transitions both participants to the in-call state using the same caller/callee principals.",
-      "reason": "Although the CallStatus type was changed to include #incoming : { caller : Principal }, the actual call lifecycle function bodies (initiateCall/answerCall/endCall/decline handling) are not shown in the truncated backend/main.mo diff, so the required state writes/resets and trap-free decline behavior cannot be confirmed.",
+      "id": "REQ-21",
+      "requirement": "Clicking “Decline” moves the callee’s call status to #none and clears the caller’s call status back to #none; clicking “Answer” transitions both participants to #inCall (and WebRTC starts only after callee answers).",
+      "reason": "The diff summary shows frontend wiring for answer/decline, but the backend implementation that must mutate both participants’ call states is not shown (backend/main.mo is truncated before any answerCall/declineCall/endCall logic is visible). Without evidence of backend state transitions for both users, this requirement cannot be verified as implemented.",
       "evidence": [
-        "backend/main.mo (truncated at initiateCall implementation)"
-      ]
-    },
-    {
-      "id": "REQ-18",
-      "requirement": "handleDecline calls a backend path that correctly rejects/ends an incoming call (no backend trap), and the UI returns to the idle state afterwards.",
-      "reason": "Frontend handleDecline calls endCall(), but the diff summary does not include backend endCall logic, so it cannot be verified that endCall safely handles rejecting an incoming call and resets both users to idle without trapping.",
-      "evidence": [
-        "frontend/src/features/call/CallSurface.tsx",
-        "backend/main.mo (endCall implementation not shown/truncated)"
+        "backend/main.mo (truncated; shows type/state definitions and start of initiateCall only)",
+        "frontend/src/hooks/useQueries.ts (calls actor.answerCall/declineCall/endCall, but does not prove backend behavior)"
       ]
     }
   ],
@@ -26,9 +18,9 @@
   "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/features/call/CallSurface.tsx",
+    "frontend/src/features/call/useWebRTCCall.ts",
     "frontend/src/hooks/useQueries.ts",
     "project_state.json"
   ]

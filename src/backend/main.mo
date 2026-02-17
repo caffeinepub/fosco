@@ -6,9 +6,7 @@ import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -134,6 +132,8 @@ actor {
     );
   };
 
+  /// This function allows the callee to accept an incoming call.
+  /// It will update both caller and callee to the `inCall` state if the call is valid.
   public shared ({ caller }) func answerCall(_ : ()) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can answer calls");
@@ -141,35 +141,65 @@ actor {
 
     switch (callStates.get(caller)) {
       case (?(#incoming { caller = callInitiator })) {
-        // Verify the call initiator still has an active outgoing call to this callee
         switch (callStates.get(callInitiator)) {
-          case (?(#inCall { caller = storedCaller; callee = storedCallee; isScreenCasting; screenCaster })) {
-            // Verify the authenticated caller is the intended callee
-            if (storedCallee != caller) {
-              Runtime.trap("Unauthorized: You are not the callee of this call");
+          case (?(#inCall { caller = inCallCaller; callee; isScreenCasting; screenCaster })) {
+            if (inCallCaller != callInitiator or callee != caller) {
+              Runtime.trap("Invalid call state: caller or callee mismatch");
             };
-            // Verify call state consistency
-            if (storedCaller != callInitiator) {
-              Runtime.trap("Invalid call state: caller mismatch");
-            };
-
-            // Update both participants to inCall state
+            // Both are valid, so update both to inCall state
             callStates.add(
               caller,
-              #inCall({ caller = callInitiator; callee = caller; isScreenCasting; screenCaster }),
+              #inCall({
+                caller = callInitiator;
+                callee = caller;
+                isScreenCasting;
+                screenCaster;
+              }),
             );
             callStates.add(
               callInitiator,
-              #inCall({ caller = callInitiator; callee = caller; isScreenCasting; screenCaster }),
+              #inCall({
+                caller = callInitiator;
+                callee = caller;
+                isScreenCasting;
+                screenCaster;
+              }),
             );
           };
-          case (_) { Runtime.trap("Invalid call state: initiator not in call") };
+          case (_) { Runtime.trap("No outgoing call to match incoming call") };
         };
       };
-      case (_) { Runtime.trap("No incoming call to answer") };
+      case (null) { Runtime.trap("No incoming call to answer") };
+      case (_) { Runtime.trap("Not in correct state to answer call") };
     };
   };
 
+  /// Decline an incoming call. This will always transition the call state to none.
+  public shared ({ caller }) func declineCall(_ : ()) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can decline calls");
+    };
+
+    switch (callStates.get(caller)) {
+      case (?(#incoming { caller = callInitiator })) {
+        // Set callee to none
+        callStates.add(caller, #none);
+        // Clean up caller's state if they are in an incomplete call
+        switch (callStates.get(callInitiator)) {
+          case (?(#inCall { callee })) {
+            if (callee == caller) {
+              callStates.add(callInitiator, #none);
+            };
+          };
+          case (_) {};
+        };
+      };
+      case (null) { Runtime.trap("No incoming call to decline") };
+      case (_) { Runtime.trap("Not in correct state to decline call") };
+    };
+  };
+
+  // Combined end call handling (legacy)
   public shared ({ caller }) func endCall(_ : ()) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can end calls");

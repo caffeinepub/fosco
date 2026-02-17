@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Fix the incoming call flow so the callee’s “Answer” and “Decline” buttons always perform the correct actions and transition call state correctly.
+**Goal:** Ensure callees reliably see and can act on an incoming call prompt (Answer/Decline), and that answering/declining transitions call state correctly and connects via WebRTC.
 
 **Planned changes:**
-- Backend: Update the call status model for incoming calls to include the caller’s Principal, and adjust call lifecycle methods so callee answer/decline works reliably and resets both users to idle when declined.
-- Backend: Add/adjust upgrade-safe migration logic to handle persisted call state after the CallStatus type change (e.g., clear/transform old incoming entries).
-- Frontend: Wire the incoming call UI to use the caller Principal from the incoming-call payload; ensure Answer/Decline call the correct backend mutations and the prompt remains clickable during the incoming state.
+- Fix the Facetime overlay UI state handling so that when the backend call status is incoming for the callee, the IncomingCallPrompt renders (not the “No active call” idle state).
+- Wire “Answer” and “Decline” controls to the correct backend mutations and handle rejected mutations by showing an English error message without leaving the UI in an inconsistent state.
+- Update callee-side WebRTC signaling handling to process already-received offer/ICE messages after the peer connection is created when the callee answers.
 
-**User-visible outcome:** When receiving a call, the callee can successfully press “Answer” to enter the in-call state or “Decline” to reject/end the call, returning both users to an idle/available state without dead buttons or backend traps.
+**User-visible outcome:** When someone calls a user, the callee consistently sees an “Incoming Call” prompt with “Answer” and “Decline”; tapping either reliably answers/declines the call, and answering connects without requiring the caller to try again.

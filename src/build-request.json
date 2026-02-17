@@ -1,88 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Fix incoming call Accept/Decline actions for callee",
+  "title": "Fix missing incoming call accept/decline prompt for callees",
   "projectName": "FOSCO",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-16",
-      "text": "Fix the incoming call flow so that the callee can successfully press “Answer” or “Decline” and the app performs the correct call actions (no-op clicks must be eliminated).",
+      "id": "REQ-20",
+      "text": "Ensure that when a user is being called, the UI reliably shows an incoming-call prompt with actionable “Answer” and “Decline” controls in the Facetime overlay (instead of showing an idle state with no accept option).",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-6"
         ],
         "quotes": [
-          "I am now able to call other users, however the users who I call are unable to press the accept or decline buttons. Please fix this problem"
+          "When called, it does not give an option for users being called to accept the call. Please fix this problem"
         ]
       },
       "acceptanceCriteria": [
-        "When a user is receiving a call (incoming state), clicking “Answer” triggers the answer flow and transitions the UI into the in-call state.",
-        "When a user is receiving a call (incoming state), clicking “Decline” ends/rejects the call and returns both users to an idle/available state.",
-        "The “Answer” button is not gated by an incorrect callStatus kind check (i.e., it must be actionable while in the incoming state)."
+        "With two signed-in users marked available, initiating a call causes the callee’s UI to render the IncomingCallPrompt (with the visible text “Incoming Call”, “Answer”, and “Decline”).",
+        "The incoming-call prompt is shown until the callee answers or declines, or until the caller ends the call.",
+        "The callee never remains stuck on the “No active call” idle state while backend call status is #incoming for that callee."
       ]
     },
     {
-      "id": "REQ-17",
-      "text": "Update the backend call status model so that the callee’s incoming call state includes sufficient information to answer/decline (at minimum: the caller’s Principal), and update backend call lifecycle methods accordingly.",
-      "target": "backend",
+      "id": "REQ-21",
+      "text": "Fix the incoming-call action wiring so that pressing “Answer” or “Decline” always performs the correct backend mutations and the call transitions to the expected state (no no-op clicks).",
+      "target": "both",
       "source": {
         "messageIds": [
           "msg-6"
         ],
         "quotes": [
-          "users who I call are unable to press the accept or decline buttons"
+          "When called, it does not give an option for users being called to accept the call. Please fix this problem"
         ]
       },
       "acceptanceCriteria": [
-        "backend/main.mo: The CallStatus variant for an incoming call carries the caller Principal (e.g., incoming-with-caller), so the frontend can call answer/decline with the correct party reference.",
-        "backend/main.mo: initiateCall stores the caller Principal in the callee’s incoming call status.",
-        "backend/main.mo: The callee can decline an incoming call without trapping; declining resets both participants’ callStates back to #none (or equivalent idle state).",
-        "backend/main.mo: Existing answer behavior continues to work, and answering transitions both participants to the in-call state using the same caller/callee principals."
+        "Clicking “Decline” moves the callee’s call status to #none and clears the caller’s call status back to #none (when the caller was ringing/attempting the call).",
+        "Clicking “Answer” transitions both participants to #inCall and starts the WebRTC flow only after the callee answers.",
+        "If the backend rejects Answer/Decline (e.g., no incoming call), the frontend shows an English error message and the UI remains consistent (no silent failure)."
       ]
     },
     {
-      "id": "REQ-18",
-      "text": "Update the frontend incoming call UI wiring to use the incoming-call caller Principal provided by the backend, and call the correct backend mutations for answer/decline so the buttons always have an effect.",
+      "id": "REQ-22",
+      "text": "Fix WebRTC signaling handling on the callee side so that answering an incoming call successfully processes any already-received offer/ICE messages after the peer connection is created (preventing ‘answer’ from appearing to do nothing).",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-6"
         ],
         "quotes": [
-          "unable to press the accept or decline buttons"
+          "When called, it does not give an option for users being called to accept the call. Please fix this problem"
         ]
       },
       "acceptanceCriteria": [
-        "frontend/src/features/call/CallSurface.tsx: handleAnswer uses the incoming call payload (caller Principal) rather than reading from the in-call payload.",
-        "frontend/src/features/call/CallSurface.tsx: handleDecline calls a backend path that correctly rejects/ends an incoming call (no backend trap), and the UI returns to the idle state afterwards.",
-        "IncomingCallPrompt remains clickable and does not appear “dead” due to missing handler logic."
-      ]
-    },
-    {
-      "id": "REQ-19",
-      "text": "If changing the backend CallStatus type requires an upgrade-safe state transition, add/adjust backend migration logic to handle existing persisted state safely (e.g., clear or transform callStates for old incoming entries).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A canister upgrade does not fail due to the CallStatus type change.",
-        "After upgrade, users are not stuck in a broken incoming state from pre-upgrade data."
+        "If the caller’s offer arrives before the callee clicks “Answer”, then after the callee clicks “Answer” the offer is still processed and the call connects successfully (remote video/audio can be established).",
+        "Answering an incoming call does not require the caller to re-initiate the call for the connection to complete.",
+        "Signal processing does not depend solely on future polling updates when there are already pending signals available at the moment the peer connection is created."
       ]
     }
   ],
   "constraints": [
-    "Keep all Motoko logic in the single actor in backend/main.mo (single-actor architecture).",
-    "Do not edit files under frontend/src/components/ui or any frontend immutablePaths listed in SYSTEM_CONTEXT; compose those components instead.",
-    "Use English for any user-facing text."
+    "Keep all Motoko logic in the single backend actor (backend/main.mo); only introduce backend/migration.mo changes if an upgrade-safe state transition is required.",
+    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "All user-facing text must be in English."
   ],
   "nonGoals": [
-    "Adding group calls or multi-party calling.",
-    "Adding third-party authentication providers (only Internet Identity).",
-    "Adding real-time transport mechanisms beyond the existing polling-based signaling design."
+    "Adding new calling features beyond fixing the missing incoming call accept/decline experience (e.g., group calls, call history, notifications).",
+    "Introducing external services (push notifications, SMS, email, WebSockets) or non-supported backend stacks/databases."
   ],
   "imageRequirements": {
     "required": [],

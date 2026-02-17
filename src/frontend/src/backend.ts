@@ -133,9 +133,17 @@ export enum UserRole {
 }
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
+    /**
+     * / This function allows the callee to accept an incoming call.
+     * / It will update both caller and callee to the `inCall` state if the call is valid.
+     */
     answerCall(arg0: null): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearSignals(arg0: null): Promise<void>;
+    /**
+     * / Decline an incoming call. This will always transition the call state to none.
+     */
+    declineCall(arg0: null): Promise<void>;
     disableScreenCast(arg0: null): Promise<void>;
     enableScreenCast(arg0: null): Promise<void>;
     endCall(arg0: null): Promise<void>;
@@ -210,6 +218,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.clearSignals(arg0);
+            return result;
+        }
+    }
+    async declineCall(arg0: null): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.declineCall(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.declineCall(arg0);
             return result;
         }
     }

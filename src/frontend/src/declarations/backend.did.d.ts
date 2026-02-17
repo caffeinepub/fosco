@@ -31,9 +31,17 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  /**
+   * / This function allows the callee to accept an incoming call.
+   * / It will update both caller and callee to the `inCall` state if the call is valid.
+   */
   'answerCall' : ActorMethod<[null], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearSignals' : ActorMethod<[null], undefined>,
+  /**
+   * / Decline an incoming call. This will always transition the call state to none.
+   */
+  'declineCall' : ActorMethod<[null], undefined>,
   'disableScreenCast' : ActorMethod<[null], undefined>,
   'enableScreenCast' : ActorMethod<[null], undefined>,
   'endCall' : ActorMethod<[null], undefined>,

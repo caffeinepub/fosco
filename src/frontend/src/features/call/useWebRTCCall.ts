@@ -19,6 +19,7 @@ export function useWebRTCCall() {
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const remotePrincipalRef = useRef<Principal | null>(null);
+  const pendingSignalsRef = useRef<SignalMessage[]>([]);
 
   const { mutate: sendSignal } = useSendSignal();
   const { data: signals = [] } = useFetchSignals();
@@ -42,6 +43,36 @@ export function useWebRTCCall() {
       throw new Error(errorMsg);
     }
   }, []);
+
+  // Process a single signal
+  const processSignal = useCallback(async (signal: SignalMessage, pc: RTCPeerConnection) => {
+    try {
+      if (signal.__kind__ === 'offer') {
+        const offer = JSON.parse(signal.offer);
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        
+        if (remotePrincipalRef.current) {
+          sendSignal({
+            target: remotePrincipalRef.current,
+            message: {
+              __kind__: 'answer',
+              answer: JSON.stringify(answer),
+            },
+          });
+        }
+      } else if (signal.__kind__ === 'answer') {
+        const answer = JSON.parse(signal.answer);
+        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      } else if (signal.__kind__ === 'iceCandidate') {
+        const candidate = JSON.parse(signal.iceCandidate);
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    } catch (err) {
+      console.error('Error processing signal:', err);
+    }
+  }, [sendSignal]);
 
   // Create peer connection
   const createPeerConnection = useCallback((stream: MediaStream) => {
@@ -79,8 +110,21 @@ export function useWebRTCCall() {
     };
 
     peerConnectionRef.current = pc;
+
+    // Process any pending signals immediately after creating the peer connection
+    if (pendingSignalsRef.current.length > 0) {
+      const signalsToProcess = [...pendingSignalsRef.current];
+      pendingSignalsRef.current = [];
+      
+      (async () => {
+        for (const signal of signalsToProcess) {
+          await processSignal(signal, pc);
+        }
+      })();
+    }
+
     return pc;
-  }, [sendSignal]);
+  }, [sendSignal, processSignal]);
 
   // Start call as caller
   const startCall = useCallback(async (calleePrincipal: Principal) => {
@@ -133,6 +177,7 @@ export function useWebRTCCall() {
     setIsConnected(false);
     setError(null);
     remotePrincipalRef.current = null;
+    pendingSignalsRef.current = [];
     clearSignals();
   }, [localStream, screenStream, clearSignals]);
 
@@ -158,42 +203,24 @@ export function useWebRTCCall() {
 
   // Process incoming signals
   useEffect(() => {
-    if (!peerConnectionRef.current || signals.length === 0) return;
+    if (signals.length === 0) return;
 
     const processSignals = async () => {
-      for (const signal of signals) {
-        try {
-          if (signal.__kind__ === 'offer') {
-            const offer = JSON.parse(signal.offer);
-            await peerConnectionRef.current!.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnectionRef.current!.createAnswer();
-            await peerConnectionRef.current!.setLocalDescription(answer);
-            
-            if (remotePrincipalRef.current) {
-              sendSignal({
-                target: remotePrincipalRef.current,
-                message: {
-                  __kind__: 'answer',
-                  answer: JSON.stringify(answer),
-                },
-              });
-            }
-          } else if (signal.__kind__ === 'answer') {
-            const answer = JSON.parse(signal.answer);
-            await peerConnectionRef.current!.setRemoteDescription(new RTCSessionDescription(answer));
-          } else if (signal.__kind__ === 'iceCandidate') {
-            const candidate = JSON.parse(signal.iceCandidate);
-            await peerConnectionRef.current!.addIceCandidate(new RTCIceCandidate(candidate));
-          }
-        } catch (err) {
-          console.error('Error processing signal:', err);
+      // If peer connection exists, process signals immediately
+      if (peerConnectionRef.current) {
+        for (const signal of signals) {
+          await processSignal(signal, peerConnectionRef.current);
         }
+        clearSignals();
+      } else {
+        // If no peer connection yet, buffer the signals for later processing
+        pendingSignalsRef.current = [...pendingSignalsRef.current, ...signals];
+        clearSignals();
       }
-      clearSignals();
     };
 
     processSignals();
-  }, [signals, sendSignal, clearSignals]);
+  }, [signals, processSignal, clearSignals]);
 
   return {
     localStream,

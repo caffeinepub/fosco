@@ -50,9 +50,17 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    /**
+     * / This function allows the callee to accept an incoming call.
+     * / It will update both caller and callee to the `inCall` state if the call is valid.
+     */
     answerCall(arg0: null): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clearSignals(arg0: null): Promise<void>;
+    /**
+     * / Decline an incoming call. This will always transition the call state to none.
+     */
+    declineCall(arg0: null): Promise<void>;
     disableScreenCast(arg0: null): Promise<void>;
     enableScreenCast(arg0: null): Promise<void>;
     endCall(arg0: null): Promise<void>;

@@ -1,13 +1,13 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 9,
+  "projectStateVersion": 11,
   "summary": "Build FOSCO: a web app for real-time video calling (via webcam/mic) while co-watching by screen casting, with phone-number-based sign-in and a UI that keeps a small video-call window in the bottom-left over a larger movie/screen-cast window.",
   "architectural_notes": [
     "Use real-time browser media (webcam/mic) for video calls (e.g., WebRTC).",
     "Use browser screen-capture for screen casting (e.g., getDisplayMedia) with single-caster enforcement."
   ],
   "known_issues": [
-    "Incoming call UI: callee cannot press (or buttons are non-functional for) Accept/Decline, preventing answering/declining calls."
+    "Incoming call UI: when a user is called, the callee is not shown an option to accept the call (no Accept/Answer UI presented)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -128,6 +128,30 @@
       "title": "Update the frontend incoming call UI wiring to use the incoming-call caller Principal provided by the backend, and call the correct backend mutations for answer/decline so the buttons always have an effect.",
       "reqIds": [
         "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-that-when-a-user-is-being-called-the-ui-reliably-shows-an-incoming-call-prompt-with-actionable-answer-and-decline-controls-in-the-facetime-overlay-instead-of-showing-an-idle-state-with-no-accept-option",
+      "title": "Ensure that when a user is being called, the UI reliably shows an incoming-call prompt with actionable “Answer” and “Decline” controls in the Facetime overlay (instead of showing an idle state with no accept option).",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-the-incoming-call-action-wiring-so-that-pressing-answer-or-decline-always-performs-the-correct-backend-mutations-and-the-call-transitions-to-the-expected-state-no-no-op-clicks",
+      "title": "Fix the incoming-call action wiring so that pressing “Answer” or “Decline” always performs the correct backend mutations and the call transitions to the expected state (no no-op clicks).",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-webrtc-signaling-handling-on-the-callee-side-so-that-answering-an-incoming-call-successfully-processes-any-already-received-offer-ice-messages-after-the-peer-connection-is-created-preventing-answer-from-appearing-to-do-nothing",
+      "title": "Fix WebRTC signaling handling on the callee side so that answering an incoming call successfully processes any already-received offer/ICE messages after the peer connection is created (preventing ‘answer’ from appearing to do nothing).",
+      "reqIds": [
+        "REQ-22"
       ],
       "version": 1
     }

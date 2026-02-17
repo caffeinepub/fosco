@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useWebRTCCall } from './useWebRTCCall';
-import { useGetCallStatus, useAnswerCall, useEndCall } from '../../hooks/useQueries';
+import { useGetCallStatus, useAnswerCall, useDeclineCall, useEndCall } from '../../hooks/useQueries';
 import IncomingCallPrompt from './IncomingCallPrompt';
 import InCallControls from './InCallControls';
+import { toast } from 'sonner';
 
 interface CallSurfaceProps {
   onCallStateChange?: (isInCall: boolean) => void;
@@ -11,10 +12,12 @@ interface CallSurfaceProps {
 export default function CallSurface({ onCallStateChange }: CallSurfaceProps) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: callStatus } = useGetCallStatus();
-  const { mutate: answerCall, isPending: isAnswering } = useAnswerCall();
-  const { mutate: endCall, isPending: isDeclining } = useEndCall();
+  const { mutateAsync: answerCall, isPending: isAnswering } = useAnswerCall();
+  const { mutateAsync: declineCall, isPending: isDeclining } = useDeclineCall();
+  const { mutateAsync: endCall, isPending: isEnding } = useEndCall();
 
   const {
     localStream,
@@ -48,33 +51,66 @@ export default function CallSurface({ onCallStateChange }: CallSurfaceProps) {
     onCallStateChange?.(isInCall);
   }, [callStatus, onCallStateChange]);
 
-  const handleAnswer = () => {
-    if (callStatus?.__kind__ === 'incoming') {
-      const callerPrincipal = callStatus.incoming.caller;
-      answerCall();
+  const handleAnswer = async () => {
+    if (callStatus?.__kind__ !== 'incoming') return;
+    
+    setActionError(null);
+    const callerPrincipal = callStatus.incoming.caller;
+    
+    try {
+      // First update backend state
+      await answerCall();
+      // Then start WebRTC connection
       webrtcAnswerCall(callerPrincipal);
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to answer call';
+      setActionError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
-  const handleDecline = () => {
-    endCall();
+  const handleDecline = async () => {
+    if (callStatus?.__kind__ !== 'incoming') return;
+    
+    setActionError(null);
+    
+    try {
+      await declineCall();
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to decline call';
+      setActionError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
-  const handleEndCall = () => {
-    webrtcEndCall();
-    endCall();
+  const handleEndCall = async () => {
+    setActionError(null);
+    
+    try {
+      webrtcEndCall();
+      await endCall();
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to end call';
+      setActionError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
   // Incoming call state
   if (callStatus?.__kind__ === 'incoming') {
     return (
-      <div className="h-full flex items-center justify-center p-4">
+      <div className="h-full flex flex-col items-center justify-center p-4 gap-4">
         <IncomingCallPrompt
           callerName="User"
           onAnswer={handleAnswer}
           onDecline={handleDecline}
           disabled={isAnswering || isDeclining}
         />
+        {actionError && (
+          <div className="bg-destructive text-destructive-foreground px-4 py-2 rounded-lg text-sm">
+            {actionError}
+          </div>
+        )}
       </div>
     );
   }
@@ -114,9 +150,9 @@ export default function CallSurface({ onCallStateChange }: CallSurfaceProps) {
         </div>
 
         {/* Error display */}
-        {error && (
+        {(error || actionError) && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground px-4 py-2 rounded-lg">
-            {error}
+            {error || actionError}
           </div>
         )}
       </div>

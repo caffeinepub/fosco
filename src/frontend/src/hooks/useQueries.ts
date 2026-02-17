@@ -47,6 +47,21 @@ export function useAnswerCall() {
   });
 }
 
+export function useDeclineCall() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.declineCall(null);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['callStatus'] });
+    },
+  });
+}
+
 export function useEndCall() {
   const { actor } = useActor();
   const queryClient = useQueryClient();

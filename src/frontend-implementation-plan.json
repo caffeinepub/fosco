@@ -1,47 +1,68 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix callee incoming call Answer/Decline wiring",
+  "title": "FOSCO: Fix callee incoming call prompt, action wiring, and WebRTC signal buffering",
   "requirements": [
     {
-      "id": "REQ-16",
-      "summary": "Ensure incoming-call Answer/Decline buttons are actionable for the callee and drive correct UI state transitions.",
+      "id": "REQ-20",
+      "summary": "Make the Facetime overlay reliably render the incoming-call prompt (with Answer/Decline) whenever the callee call status is incoming, and keep it visible until resolution.",
       "acceptanceCriteria": [
-        "When a user is receiving a call (incoming state), clicking “Answer” triggers the answer flow and transitions the UI into the in-call state.",
-        "When a user is receiving a call (incoming state), clicking “Decline” ends/rejects the call and returns both users to an idle/available state.",
-        "The “Answer” button is not gated by an incorrect callStatus kind check (i.e., it must be actionable while in the incoming state)."
+        "With two signed-in users marked available, initiating a call causes the callee’s UI to render the IncomingCallPrompt (with the visible text “Incoming Call”, “Answer”, and “Decline”).",
+        "The incoming-call prompt is shown until the callee answers or declines, or until the caller ends the call.",
+        "The callee never remains stuck on the “No active call” idle state while backend call status is #incoming for that callee."
       ],
       "file_operations": [
         {
           "path": "frontend/src/features/call/CallSurface.tsx",
           "operation": "modify",
-          "description": "Fix callee incoming-call action handlers so Answer is enabled for CallStatus.__kind__ === 'incoming' (not 'inCall'); use the incoming payload’s caller Principal for WebRTC answer setup; ensure Decline triggers a real reject/end action and locally tears down any in-progress WebRTC state so the UI returns to idle."
+          "description": "Ensure incoming state takes precedence over idle rendering and that IncomingCallPrompt remains mounted while callStatus is incoming; keep user-facing text in English and ensure overlay displays actionable Answer/Decline controls reliably."
         },
         {
           "path": "frontend/src/features/call/IncomingCallPrompt.tsx",
           "operation": "modify",
-          "description": "Ensure the incoming prompt remains clearly clickable and reflects action-in-progress states (e.g., disable buttons only while mutations are pending) without breaking existing Answer/Decline handler wiring."
+          "description": "Confirm the prompt always shows the exact English labels (“Incoming Call”, “Answer”, “Decline”) and that disabled/loading behavior cannot hide the actions. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-18",
-      "summary": "Wire incoming-call UI to use backend-provided caller Principal and invoke the correct backend mutations for answer/decline so clicks always have an effect.",
+      "id": "REQ-21",
+      "summary": "Wire Answer/Decline so clicks always trigger the correct backend mutations, transition to the expected call state, and surface backend rejections as English errors (no silent no-ops).",
       "acceptanceCriteria": [
-        "frontend/src/features/call/CallSurface.tsx: handleAnswer uses the incoming call payload (caller Principal) rather than reading from the in-call payload.",
-        "frontend/src/features/call/CallSurface.tsx: handleDecline calls a backend path that correctly rejects/ends an incoming call (no backend trap), and the UI returns to the idle state afterwards.",
-        "IncomingCallPrompt remains clickable and does not appear “dead” due to missing handler logic."
+        "Clicking “Decline” moves the callee’s call status to #none and clears the caller’s call status back to #none (when the caller was ringing/attempting the call).",
+        "Clicking “Answer” transitions both participants to #inCall and starts the WebRTC flow only after the callee answers.",
+        "If the backend rejects Answer/Decline (e.g., no incoming call), the frontend shows an English error message and the UI remains consistent (no silent failure)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Align call-action mutations with the current backend interface for answering/ending calls (e.g., answerCall/endCall argument shapes) and ensure successful mutations invalidate the callStatus query so the UI reliably transitions out of incoming and into in-call/idle states."
+          "description": "Add a dedicated decline-call mutation using the backend declineCall capability; adjust existing call mutations to expose async usage and propagate errors so the UI can show English error messages and keep state consistent."
         },
         {
           "path": "frontend/src/features/call/CallSurface.tsx",
           "operation": "modify",
-          "description": "Update handleAnswer/handleDecline to use the backend-provided CallStatus.incoming.caller Principal for WebRTC setup while calling the correct backend mutations for answering/declining; remove any no-op guards so button clicks always trigger the intended flows."
+          "description": "Update Answer/Decline handlers to (1) await the corresponding mutation, (2) show English error feedback on failure, (3) only start WebRTC after Answer succeeds, and (4) use declineCall (not endCall) for declining an incoming call. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-22",
+      "summary": "Fix callee-side WebRTC signaling so offers/ICE received before Answer are buffered and processed immediately after the peer connection is created.",
+      "acceptanceCriteria": [
+        "If the caller’s offer arrives before the callee clicks “Answer”, then after the callee clicks “Answer” the offer is still processed and the call connects successfully (remote video/audio can be established).",
+        "Answering an incoming call does not require the caller to re-initiate the call for the connection to complete.",
+        "Signal processing does not depend solely on future polling updates when there are already pending signals available at the moment the peer connection is created."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/features/call/useWebRTCCall.ts",
+          "operation": "modify",
+          "description": "Introduce callee-side buffering/queuing for already-fetched SignalMessage items when no RTCPeerConnection exists yet, and trigger processing immediately after creating the peer connection on Answer; ensure queued offer/ICE are applied and then cleared without relying on a future polling tick."
+        },
+        {
+          "path": "frontend/src/features/call/CallSurface.tsx",
+          "operation": "modify",
+          "description": "After a successful Answer mutation, ensure the WebRTC hook is invoked in a way that immediately processes any pending/buffered signals created prior to answering, preventing “Answer” from appearing to do nothing."
         }
       ]
     }

@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-incoming-call-flow-so-that-the-callee-can-successfully-press-answer-or-decline-and-the-app-performs-the-correct-call-actions-no-op-clicks-must-be-eliminated",
-      "featureTitle": "Fix the incoming call flow so that the callee can successfully press “Answer” or “Decline” and the app performs the correct call actions (no-op clicks must be eliminated).",
+      "featureId": "feature-ensure-that-when-a-user-is-being-called-the-ui-reliably-shows-an-incoming-call-prompt-with-actionable-answer-and-decline-controls-in-the-facetime-overlay-instead-of-showing-an-idle-state-with-no-accept-option",
+      "featureTitle": "Ensure that when a user is being called, the UI reliably shows an incoming-call prompt with actionable “Answer” and “Decline” controls in the Facetime overlay (instead of showing an idle state with no accept option).",
       "files": [
         "frontend/src/features/call/CallSurface.tsx"
       ],
@@ -17,13 +17,13 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-16"
+        "REQ-20"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-frontend-incoming-call-ui-wiring-to-use-the-incoming-call-caller-principal-provided-by-the-backend-and-call-the-correct-backend-mutations-for-answer-decline-so-the-buttons-always-have-an-effect",
-      "featureTitle": "Update the frontend incoming call UI wiring to use the incoming-call caller Principal provided by the backend, and call the correct backend mutations for answer/decline so the buttons always have an effect.",
+      "featureId": "feature-fix-the-incoming-call-action-wiring-so-that-pressing-answer-or-decline-always-performs-the-correct-backend-mutations-and-the-call-transitions-to-the-expected-state-no-no-op-clicks",
+      "featureTitle": "Fix the incoming-call action wiring so that pressing “Answer” or “Decline” always performs the correct backend mutations and the call transitions to the expected state (no no-op clicks).",
       "files": [
         "frontend/src/features/call/CallSurface.tsx",
         "frontend/src/hooks/useQueries.ts"
@@ -38,7 +38,28 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-18"
+        "REQ-21"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-fix-webrtc-signaling-handling-on-the-callee-side-so-that-answering-an-incoming-call-successfully-processes-any-already-received-offer-ice-messages-after-the-peer-connection-is-created-preventing-answer-from-appearing-to-do-nothing",
+      "featureTitle": "Fix WebRTC signaling handling on the callee side so that answering an incoming call successfully processes any already-received offer/ICE messages after the peer connection is created (preventing ‘answer’ from appearing to do nothing).",
+      "files": [
+        "frontend/src/features/call/CallSurface.tsx",
+        "frontend/src/features/call/useWebRTCCall.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "camera@1.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-22"
       ],
       "confidence": "high"
     }
